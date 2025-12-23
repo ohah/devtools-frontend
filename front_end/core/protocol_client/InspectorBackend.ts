@@ -471,6 +471,10 @@ export class TargetBase {
     return this.getAgent('Storage');
   }
 
+  sessionReplayAgent(): ProtocolProxyApi.SessionReplayApi {
+    return this.getAgent('SessionReplay');
+  }
+
   systemInfo(): ProtocolProxyApi.SystemInfoApi {
     return this.getAgent('SystemInfo');
   }
@@ -617,6 +621,10 @@ export class TargetBase {
 
   registerStorageDispatcher(dispatcher: ProtocolProxyApi.StorageDispatcher): void {
     this.registerDispatcher('Storage', dispatcher);
+  }
+
+  registerSessionReplayDispatcher(dispatcher: ProtocolProxyApi.SessionReplayDispatcher): void {
+    this.registerDispatcher('SessionReplay', dispatcher);
   }
 
   registerTargetDispatcher(dispatcher: ProtocolProxyApi.TargetDispatcher): void {
