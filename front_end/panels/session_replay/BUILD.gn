@@ -1,0 +1,43 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("../../../scripts/build/ninja/devtools_entrypoint.gni")
+import("../../../scripts/build/ninja/devtools_module.gni")
+
+devtools_ui_module("session_replay") {
+  sources = [
+    "SessionReplayPanel.ts",
+  ]
+
+  deps = [
+    "../../ui/legacy:bundle",
+  ]
+}
+
+devtools_entrypoint("bundle") {
+  entrypoint = "session_replay.ts"
+
+  deps = [
+    ":session_replay",
+  ]
+
+  visibility = [ ":*" ]
+}
+
+devtools_entrypoint("meta") {
+  entrypoint = "session_replay-meta.ts"
+
+  deps = [
+    ":bundle",
+    "../../core/i18n:bundle",
+    "../../ui/legacy:bundle",
+  ]
+
+  visibility = [
+    "../..:*",
+    "../../entrypoints/devtools_app:*",
+    "../../entrypoints/inspector:*",
+  ]
+}
+
