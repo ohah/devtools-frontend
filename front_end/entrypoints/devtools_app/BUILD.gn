@@ -33,6 +33,8 @@ devtools_entrypoint("entrypoint") {
     "../../panels/web_audio:meta",
     "../../panels/webauthn:meta",
     "../../panels/whats_new:meta",
+    "../../panels/welcome:meta",
+    "../../panels/session_replay:meta",
     "../main:bundle",
     "../shell",
   ]
