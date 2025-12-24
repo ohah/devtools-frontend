@@ -1,0 +1,30 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("../../../scripts/build/ninja/devtools_entrypoint.gni")
+import("../../../scripts/build/ninja/devtools_pre_built.gni")
+import("../visibility.gni")
+
+devtools_pre_built("rrweb-replay") {
+  sources_are_release = false
+
+  sources = [
+    "rrweb-replay-tsconfig.json",
+    "package/dist/replay.js",
+    "package/dist/index.d.ts",
+    "package/dist/style.min.css",
+  ]
+}
+
+devtools_entrypoint("bundle") {
+  entrypoint = "rrweb-replay.ts"
+
+  deps = [ ":rrweb-replay" ]
+
+  visibility = [
+    "../../panels/session_replay/*",
+  ]
+
+  visibility += devtools_third_party_visibility
+}

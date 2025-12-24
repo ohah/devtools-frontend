@@ -804,6 +804,7 @@ grd_files_bundled_sources = [
   "front_end/third_party/lit/lit.js",
   "front_end/third_party/marked/marked.js",
   "front_end/third_party/puppeteer-replay/puppeteer-replay.js",
+  "front_end/third_party/rrweb-replay/rrweb-replay.js",
   "front_end/third_party/puppeteer/puppeteer.js",
   "front_end/third_party/source-map-scopes-codec/source-map-scopes-codec.js",
   "front_end/third_party/third-party-web/third-party-web.js",

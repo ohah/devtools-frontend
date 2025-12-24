@@ -12,6 +12,7 @@ devtools_ui_module("session_replay") {
 
   deps = [
     "../../ui/legacy:bundle",
+    "../../third_party/rrweb-replay:bundle",
   ]
 }
 
