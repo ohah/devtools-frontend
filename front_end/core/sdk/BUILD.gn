@@ -61,6 +61,7 @@ devtools_module("sdk") {
     "OverlayPersistentHighlighter.ts",
     "PageLoad.ts",
     "PageResourceLoader.ts",
+    "PostMessageTransport.ts",
     "PaintProfiler.ts",
     "PerformanceMetricsModel.ts",
     "PreloadingModel.ts",
