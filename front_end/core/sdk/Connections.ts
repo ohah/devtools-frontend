@@ -10,6 +10,7 @@ import * as ProtocolClient from '../protocol_client/protocol_client.js';
 import * as Root from '../root/root.js';
 
 import {RehydratingConnectionTransport} from './RehydratingConnection.js';
+import {PostMessageTransport} from './PostMessageTransport.js';
 
 const UIStrings = {
   /**
@@ -225,6 +226,12 @@ function createMainTransport(onConnectionLost: (message: Platform.UIString.Local
     ProtocolClient.ConnectionTransport.ConnectionTransport {
   if (Root.Runtime.Runtime.isTraceApp()) {
     return new RehydratingConnectionTransport(onConnectionLost);
+  }
+
+  // Check for postMessage mode / postMessage 모드 확인
+  const postMessageParam = Root.Runtime.Runtime.queryParam('postMessage');
+  if (postMessageParam === 'true') {
+    return new PostMessageTransport(onConnectionLost);
   }
 
   const wsParam = Root.Runtime.Runtime.queryParam('ws');
