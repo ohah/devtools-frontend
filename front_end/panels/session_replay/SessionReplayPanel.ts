@@ -29,16 +29,30 @@ export class SessionReplayPanel extends UI.Panel.Panel {
 
   constructor() {
     super('session-replay');
-    console.log('SessionReplay: Panel constructor called / 패널 생성자 호출됨');
     this.render();
   }
 
   override wasShown(): void {
     super.wasShown();
-    console.log('SessionReplay: Panel was shown / 패널 표시됨');
+
+    // Notify parent/opener window that SessionReplay panel is ready / 부모/opener 창에 SessionReplay 패널이 준비되었음을 알림
+    // Works for both iframe mode and WebSocket mode / iframe 모드와 웹소켓 모드 모두에서 동작
+    if (window !== window.top) {
+      // Iframe mode: send to parent / Iframe 모드: parent에 전송
+      window.parent.postMessage({ type: 'SESSION_REPLAY_READY' }, '*');
+    } else if (window.opener) {
+      // Popup/WebSocket mode: send to opener / Popup/웹소켓 모드: opener에 전송
+      window.opener.postMessage({ type: 'SESSION_REPLAY_READY' }, '*');
+    }
+
+    // Reset current time when panel is shown / 패널이 표시될 때 현재 시간 리셋
+    this.#currentTime = 0;
 
     // Update container height when panel is shown / 패널이 표시될 때 컨테이너 높이 업데이트
     this.updateContainerHeight();
+
+    // Update progress to reflect reset time / 리셋된 시간을 반영하여 진행 상태 업데이트
+    this.updateProgress();
 
     // Setup CDP listener when panel is shown / 패널이 표시될 때 CDP 리스너 설정
     this.setupCDPListener();
@@ -46,7 +60,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
     // Also try to setup listener after a short delay in case target becomes available / 타겟이 나중에 사용 가능해질 수 있으므로 짧은 지연 후에도 시도
     setTimeout(() => {
       if (!this.#target) {
-        console.log('SessionReplay: Retrying setup after delay / 지연 후 재시도');
         this.setupCDPListener();
       }
       // Update height again after delay to ensure correct calculation / 지연 후 높이를 다시 업데이트하여 정확한 계산 보장
@@ -55,20 +68,15 @@ export class SessionReplayPanel extends UI.Panel.Panel {
   }
 
   private setupCDPListener(): void {
-    console.log('SessionReplay: setupCDPListener called / setupCDPListener 호출됨');
     // Get primary target and listen to CDP events / 주요 타겟을 가져와서 CDP 이벤트 리스닝
     const target = SDK.TargetManager.TargetManager.instance().primaryPageTarget();
-    console.log('SessionReplay: Primary target / 주요 타겟:', target);
     if (!target) {
-      console.log('SessionReplay: No target available, waiting... / 타겟 없음, 대기 중...');
       // Wait for target to be available / 타겟이 사용 가능할 때까지 대기
       SDK.TargetManager.TargetManager.instance().addEventListener(
         SDK.TargetManager.Events.AVAILABLE_TARGETS_CHANGED,
         () => {
-          console.log('SessionReplay: AVAILABLE_TARGETS_CHANGED event / 타겟 변경 이벤트');
           const newTarget = SDK.TargetManager.TargetManager.instance().primaryPageTarget();
           if (newTarget && !this.#target) {
-            console.log('SessionReplay: New target available / 새 타겟 사용 가능:', newTarget);
             this.#target = newTarget;
             this.attachToTarget(newTarget);
           }
@@ -78,7 +86,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
       return;
     }
 
-    console.log('SessionReplay: Target available, attaching... / 타겟 사용 가능, 연결 중...');
     this.#target = target;
     this.attachToTarget(target);
   }
@@ -87,69 +94,45 @@ export class SessionReplayPanel extends UI.Panel.Panel {
     // Listen to SessionReplay.eventRecorded events / SessionReplay.eventRecorded 이벤트 리스닝
     const router = target.router();
     if (!router) {
-      console.warn('SessionReplay: Router not available / 라우터를 사용할 수 없음');
       return;
     }
 
     const connection = router.connection;
     if (!connection) {
-      console.warn('SessionReplay: Connection not available / 연결을 사용할 수 없음');
       return;
     }
 
-    console.log('SessionReplay: Attaching to target / 타겟에 연결 중...', target);
 
     // Enable SessionReplay domain / SessionReplay 도메인 활성화
     const sessionReplayAgent = target.sessionReplayAgent();
     if (sessionReplayAgent) {
       sessionReplayAgent.invoke_enable().then(() => {
-        console.log('SessionReplay: Domain enabled / 도메인 활성화됨');
-      }).catch((error: unknown) => {
-        console.error('SessionReplay: Failed to enable domain / 도메인 활성화 실패:', error);
+
+      }).catch((_error: unknown) => {
+
       });
-    } else {
-      console.warn('SessionReplay: SessionReplayAgent not available / SessionReplayAgent를 사용할 수 없음');
     }
 
     this.#observer = {
       onEvent: <T extends ProtocolClient.CDPConnection.Event>(event: ProtocolClient.CDPConnection.CDPEvent<T>): void => {
-        // Log first few events for debugging / 디버깅을 위해 처음 몇 개 이벤트 로깅
-        if (this.#rrwebEvents.length < 5) {
-          console.log('SessionReplay: CDP event received / CDP 이벤트 수신:', event.method, event.params);
-        }
 
-        // Log all SessionReplay related events for debugging / 디버깅을 위해 모든 SessionReplay 관련 이벤트 로깅
-        if (event.method?.includes('SessionReplay') || event.method?.toLowerCase().includes('session')) {
-          console.log('SessionReplay: Received SessionReplay event / SessionReplay 이벤트 수신:', event.method, event.params);
-        }
 
         // Check for SessionReplay.eventRecorded event / SessionReplay.eventRecorded 이벤트 확인
         if (event.method === 'SessionReplay.eventRecorded') {
           const params = event.params as Protocol.SessionReplay.EventRecordedEvent;
-          console.log('SessionReplay: eventRecorded event received / eventRecorded 이벤트 수신:', params);
           if (Array.isArray(params.events)) {
-            console.log('SessionReplay: Received events / 이벤트 수신:', params.events.length);
             this.#rrwebEvents.push(...params.events);
-            console.log('SessionReplay: Total events / 총 이벤트:', this.#rrwebEvents.length);
             void this.updateReplay();
-          } else {
-            console.warn('SessionReplay: params.events is not an array / params.events가 배열이 아님:', params);
           }
         }
       },
       onDisconnect: (_reason: string): void => {
-        console.log('SessionReplay: Connection disconnected / 연결 끊김:', _reason);
         this.#observer = null;
       },
     };
 
     connection.observe(this.#observer);
-    console.log('SessionReplay: Observer attached / 옵저버 연결됨');
-    console.log('SessionReplay: Connection state / 연결 상태:', {
-      hasObserver: !!this.#observer,
-      connectionReady: !!connection,
-      targetId: target.id(),
-    });
+
   }
 
   private render(): void {
@@ -336,8 +319,8 @@ export class SessionReplayPanel extends UI.Panel.Panel {
             // Fallback: estimate based on elapsed time / 대체: 경과 시간 기반 추정
             this.#currentTime = Math.min(this.#totalTime, this.#currentTime + 100);
           }
-        } catch (error) {
-          console.warn('SessionReplay: Failed to get current time / 현재 시간 가져오기 실패:', error);
+        } catch (_error) {
+          // Failed to get current time / 현재 시간 가져오기 실패
         }
         this.updateProgress();
       }
@@ -356,6 +339,9 @@ export class SessionReplayPanel extends UI.Panel.Panel {
       return;
     }
 
+    // Clamp currentTime to valid range / currentTime을 유효한 범위로 제한
+    this.#currentTime = Math.max(0, Math.min(this.#totalTime, this.#currentTime));
+
     const percentage = Math.min(100, (this.#currentTime / this.#totalTime) * 100);
     this.#progressFill.style.width = `${percentage}%`;
 
@@ -365,7 +351,9 @@ export class SessionReplayPanel extends UI.Panel.Panel {
   }
 
   private formatTime(ms: number): string {
-    const seconds = Math.floor(ms / 1000);
+    // Ensure non-negative value / 음수가 아닌 값 보장
+    const clampedMs = Math.max(0, ms);
+    const seconds = Math.floor(clampedMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -409,7 +397,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
 
   private async updateReplay(): Promise<void> {
     if (!this.#container) {
-      console.warn('SessionReplay: Container not available / 컨테이너를 사용할 수 없음');
       return;
     }
 
@@ -417,12 +404,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
     const hasFullSnapshot = this.#rrwebEvents.some(
       (event: unknown) => (event as {type?: number}).type === 2
     );
-
-    console.log('SessionReplay: updateReplay called / updateReplay 호출됨', {
-      eventCount: this.#rrwebEvents.length,
-      hasFullSnapshot,
-      rrwebLoaded: this.#rrwebLoaded,
-    });
 
     if (this.#rrwebEvents.length < 2 || !hasFullSnapshot) {
       this.#container.innerHTML = `
@@ -436,9 +417,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
     // Initialize rrweb Replayer / rrweb Replayer 초기화
     if (!this.#rrwebLoaded) {
       try {
-        console.log('SessionReplay: Initializing Replayer / Replayer 초기화 중...');
-        console.log('SessionReplay: Replayer class / Replayer 클래스:', Replayer);
-
         this.#rrwebLoaded = true;
 
         // Clear container and create wrapper / 컨테이너 비우고 wrapper 생성
@@ -447,8 +425,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
         const wrapper = document.createElement('div');
         // Wrapper uses default styles from CSS (position: relative only) / Wrapper는 CSS의 기본 스타일 사용 (position: relative만)
         this.#container.appendChild(wrapper);
-
-        console.log('SessionReplay: Creating Replayer with events / 이벤트로 Replayer 생성:', this.#rrwebEvents.length);
 
         // Calculate total time / 총 시간 계산
         this.#totalTime = this.calculateTotalTime();
@@ -465,10 +441,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
           if (evt.type === 4 && evt.data?.width && evt.data?.height) {
             viewportWidth = evt.data.width;
             viewportHeight = evt.data.height;
-            console.log('SessionReplay: Found viewport size from Meta event / Meta 이벤트에서 뷰포트 크기 발견:', {
-              width: viewportWidth,
-              height: viewportHeight,
-            });
             break;
           }
         }
@@ -481,11 +453,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
           showWarning: false,
         });
 
-        console.log('SessionReplay: Replayer created / Replayer 생성됨', {
-          totalTime: this.#totalTime,
-          eventCount: this.#rrwebEvents.length,
-        });
-
         // Set fixed size for iframe after Replayer creates it / Replayer가 iframe을 생성한 후 고정 크기 설정
         // Follow original rrweb pattern: set iframe width/height attributes / 원본 rrweb 패턴 따름: iframe width/height 속성 설정
         setTimeout(() => {
@@ -495,10 +462,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
               replayer.iframe.setAttribute('width', String(viewportWidth));
               replayer.iframe.setAttribute('height', String(viewportHeight));
               replayer.iframe.style.display = 'inherit';
-              console.log('SessionReplay: Set iframe size / iframe 크기 설정:', {
-                width: viewportWidth,
-                height: viewportHeight,
-              });
             }
           }
         }, 100);
@@ -513,13 +476,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
         // Don't auto-play, let user control / 자동 재생하지 않고 사용자가 제어하도록
         // this.#replayer.play();
       } catch (error) {
-        console.error('Failed to initialize rrweb replayer / rrweb replayer 초기화 실패:', error);
-        console.error('Error details / 오류 상세:', {
-          error,
-          errorMessage: error instanceof Error ? error.message : String(error),
-          errorStack: error instanceof Error ? error.stack : undefined,
-          ReplayerAvailable: typeof Replayer !== 'undefined',
-        });
         this.#container.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #f00;">
             Failed to load replay: ${error instanceof Error ? error.message : String(error)}
@@ -531,7 +487,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
       // If new events arrive, we need to recreate the replayer / 새 이벤트가 도착하면 replayer를 재생성해야 함
       // rrweb Replayer doesn't support updating events after initialization
       // rrweb Replayer는 초기화 후 이벤트 업데이트를 지원하지 않음
-      console.log('SessionReplay: Recreating replayer with new events / 새 이벤트로 replayer 재생성');
       this.stopProgressUpdate();
       this.#replayer.pause();
       this.#replayer = null;
@@ -558,7 +513,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
       if (replayer.emitter?.on) {
         // Listen to start event / start 이벤트 리스닝
         replayer.emitter.on('start', () => {
-          console.log('SessionReplay: Replayer started / Replayer 시작됨');
           this.#isPlaying = true;
           this.updatePlayPauseButton(true);
           this.startProgressUpdate();
@@ -566,7 +520,6 @@ export class SessionReplayPanel extends UI.Panel.Panel {
 
         // Listen to pause event / pause 이벤트 리스닝
         replayer.emitter.on('pause', () => {
-          console.log('SessionReplay: Replayer paused / Replayer 일시정지됨');
           this.#isPlaying = false;
           this.updatePlayPauseButton(false);
           this.stopProgressUpdate();
@@ -579,23 +532,30 @@ export class SessionReplayPanel extends UI.Panel.Panel {
 
         // Listen to finish event / finish 이벤트 리스닝
         replayer.emitter.on('finish', () => {
-          console.log('SessionReplay: Replayer finished / Replayer 종료됨');
           this.#isPlaying = false;
           this.#currentTime = this.#totalTime;
           this.updatePlayPauseButton(false);
           this.stopProgressUpdate();
           this.updateProgress();
         });
-      } else {
-        console.warn('SessionReplay: Emitter not available / Emitter를 사용할 수 없음');
       }
-    } catch (error) {
-      console.warn('SessionReplay: Could not setup replayer events / replayer 이벤트 설정 실패:', error);
+    } catch (_error) {
+      // Could not setup replayer events / replayer 이벤트 설정 실패
     }
   }
 
   override willHide(): void {
     super.willHide();
+    // Notify parent/opener window that SessionReplay panel is being hidden / 부모/opener 창에 SessionReplay 패널이 숨겨지고 있음을 알림
+    // This allows Inspector to stop sending events and buffer them instead / 이를 통해 Inspector가 이벤트 전송을 중지하고 버퍼링할 수 있음
+    if (window !== window.top) {
+      // Iframe mode: send to parent / Iframe 모드: parent에 전송
+      window.parent.postMessage({ type: 'SESSION_REPLAY_HIDDEN' }, '*');
+    } else if (window.opener) {
+      // Popup/WebSocket mode: send to opener / Popup/웹소켓 모드: opener에 전송
+      window.opener.postMessage({ type: 'SESSION_REPLAY_HIDDEN' }, '*');
+    }
+
     // Clean up when panel is hidden / 패널이 숨겨질 때 정리
     this.stopProgressUpdate();
     if (this.#replayer) {
