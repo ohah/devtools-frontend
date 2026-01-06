@@ -1,0 +1,104 @@
+// Copyright 2025 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import * as UI from '../../ui/legacy/legacy.js';
+import * as Platform from '../../core/platform/platform.js';
+import * as SDK from '../../core/sdk/sdk.js';
+import * as ProtocolClient from '../../core/protocol_client/protocol_client.js';
+import * as Root from '../../core/root/root.js';
+import { ReduxExtensionBridge } from './ReduxExtensionBridge.js';
+
+export class ReduxPanel extends UI.Panel.Panel {
+  #iframe: HTMLIFrameElement | null = null;
+  #bridge: ReduxExtensionBridge;
+  #target: SDK.Target.Target | null = null;
+
+  constructor() {
+    super('redux');
+    this.setHideOnDetach();
+
+    this.#bridge = new ReduxExtensionBridge();
+
+    // Create iframe directly / iframe 직접 생성
+    this.#iframe = document.createElement('iframe');
+    this.#iframe.className = 'redux-devtools-iframe';
+    this.#iframe.style.width = '100%';
+    this.#iframe.style.height = '100%';
+    this.#iframe.style.border = 'none';
+
+    // Build URL for devpanel.html / devpanel.html URL 구성
+    // Use the same base URL as the current page / 현재 페이지와 동일한 base URL 사용
+    const remoteBase = Root.Runtime.getRemoteBase();
+    let reduxDevToolsPage: Platform.DevToolsPath.UrlString;
+    if (remoteBase) {
+      // Use remote base if available / remote base가 있으면 사용
+      reduxDevToolsPage = `${remoteBase.base}panels/redux/extension/devpanel.html` as Platform.DevToolsPath.UrlString;
+    } else {
+      // Fallback to relative path / 상대 경로로 폴백
+      const currentPath = window.location.pathname;
+      const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+      reduxDevToolsPage = `${basePath}/panels/redux/extension/devpanel.html` as Platform.DevToolsPath.UrlString;
+    }
+    this.#iframe.src = reduxDevToolsPage;
+
+    this.#iframe.onload = () => {
+      if (this.#iframe?.contentWindow) {
+        this.#bridge.initialize(this.#iframe.contentWindow);
+      }
+    };
+
+    this.contentElement.appendChild(this.#iframe);
+
+    // Setup CDP listener / CDP 리스너 설정
+    this.setupCDPListener();
+  }
+
+  override wasShown(): void {
+    super.wasShown();
+    this.setupCDPListener();
+  }
+
+  override willHide(): void {
+    super.willHide();
+    this.cleanupCDPListener();
+  }
+
+
+  private setupCDPListener(): void {
+    const target = SDK.TargetManager.TargetManager.instance().primaryPageTarget();
+    if (!target) {
+      SDK.TargetManager.TargetManager.instance().addEventListener(
+        SDK.TargetManager.Events.AVAILABLE_TARGETS_CHANGED,
+        () => {
+          const newTarget = SDK.TargetManager.TargetManager.instance().primaryPageTarget();
+          if (newTarget && !this.#target) {
+            this.#target = newTarget;
+            this.attachToTarget(newTarget);
+          }
+        },
+        this
+      );
+      return;
+    }
+
+    this.#target = target;
+    this.attachToTarget(target);
+  }
+
+  private attachToTarget(target: SDK.Target.Target): void {
+    const router = target.router();
+    if (!router?.connection) {
+      return;
+    }
+
+    // Redux CDP 이벤트를 bridge로 전달 / Redux CDP 이벤트를 bridge로 전달
+    this.#bridge.attachToTarget(target, router.connection);
+  }
+
+  private cleanupCDPListener(): void {
+    this.#bridge.cleanup();
+  }
+}
+
+
