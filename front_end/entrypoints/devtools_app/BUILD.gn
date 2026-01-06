@@ -35,6 +35,7 @@ devtools_entrypoint("entrypoint") {
     "../../panels/whats_new:meta",
     "../../panels/welcome:meta",
     "../../panels/session_replay:meta",
+    "../../panels/redux:meta",
     "../main:bundle",
     "../shell",
   ]

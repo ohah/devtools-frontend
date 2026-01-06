@@ -29,6 +29,7 @@ group("front_end") {
     "entrypoints/trace_app:entrypoint",
     "entrypoints/wasmparser_worker:worker_entrypoint",
     "entrypoints/worker_app:entrypoint",
+    "panels/redux:extension_files",
     "third_party/vscode.web-custom-data:web_custom_data",
   ]
 }

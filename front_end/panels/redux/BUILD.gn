@@ -1,0 +1,84 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("../../../scripts/build/ninja/devtools_entrypoint.gni")
+import("../../../scripts/build/ninja/devtools_module.gni")
+import("../../../scripts/build/ninja/copy.gni")
+import("../../../scripts/build/typescript/typescript.gni")
+import("../visibility.gni")
+
+devtools_ui_module("redux") {
+  sources = [
+    "ReduxPanel.ts",
+    "ReduxExtensionBridge.ts",
+  ]
+
+  deps = [
+    "../../core/common:bundle",
+    "../../core/i18n:bundle",
+    "../../core/platform:bundle",
+    "../../core/protocol_client:bundle",
+    "../../core/sdk:bundle",
+    "../../ui/legacy:bundle",
+    "../../panels/common:bundle",
+  ]
+
+  # Extension files are copied separately / Extension 파일들은 별도로 복사됨
+  data_deps = [
+    ":extension_files",
+  ]
+}
+
+# Copy extension files to gen directory / extension 파일들을 gen 디렉토리로 복사
+copy_to_gen_with_grd("extension_files") {
+  sources = [
+    "extension/devpanel.html",
+    "extension/devpanel.bundle.js",
+    "extension/devpanel.bundle.css",
+    "extension/background.bundle.js",
+    "extension/content.bundle.js",
+    "extension/page.bundle.js",
+    "extension/img/loading.svg",
+    "extension/img/logo/128x128.png",
+    "extension/img/logo/16x16.png",
+    "extension/img/logo/38x38.png",
+    "extension/img/logo/48x48.png",
+    "extension/img/logo/error.png",
+    "extension/img/logo/gray.png",
+    "extension/img/logo/scalable.png",
+  ]
+}
+
+devtools_entrypoint("bundle") {
+  entrypoint = "redux.ts"
+
+  deps = [
+    ":redux",
+  ]
+
+  visibility = [
+    ":*",
+    "../../entrypoints/*",
+  ]
+
+  visibility += devtools_panels_visibility
+}
+
+devtools_entrypoint("meta") {
+  entrypoint = "redux-meta.ts"
+
+  deps = [
+    ":bundle",
+    "../../core/i18n:bundle",
+    "../../core/root:bundle",
+    "../../ui/legacy:bundle",
+  ]
+
+  visibility = [ "../../entrypoints/*" ]
+}
+
+# Redux DevTools Extension 파일들은 front_end/panels/redux/extension/ 디렉토리에 있으므로
+# 빌드 시스템이 자동으로 resources/inspector로 복사합니다 / Redux DevTools Extension 파일들은 front_end/panels/redux/extension/ 디렉토리에 있으므로
+# 빌드 시스템이 자동으로 resources/inspector로 복사합니다
+
