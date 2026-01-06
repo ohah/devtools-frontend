@@ -10646,7 +10646,7 @@ export namespace Network {
      * Cookie expiration date as the number of seconds since the UNIX epoch.
      * The value is set to -1 if the expiry date is not set.
      * The value can be null for values that cannot be represented in
-     * JSON (±Inf).
+     * JSON (짹Inf).
      */
     expires: number;
     /**
@@ -16461,6 +16461,44 @@ export namespace Preload {
   }
 }
 
+/**
+ * Redux DevTools Protocol domain for debugging Redux applications.
+ * Messages are sent in Redux DevTools Extension spec format
+ */
+export namespace Redux {
+
+  /**
+   * Fired when a Redux DevTools Extension message is sent
+   * The message format matches Redux DevTools Extension spec
+   */
+  export interface MessageEvent {
+    /**
+     * Message type (INIT_INSTANCE, ACTION, STATE, ERROR, etc.)
+     */
+    type: string;
+    /**
+     * Message payload (varies by type)
+     */
+    payload?: any;
+    /**
+     * Message source (always '@devtools-page')
+     */
+    source: string;
+    /**
+     * Unique identifier for the store instance
+     */
+    instanceId: integer;
+    /**
+     * Additional fields depending on message type
+     */
+    action?: any;
+    libConfig?: any;
+    maxAge?: integer;
+    nextActionId?: integer;
+    message?: string;
+  }
+}
+
 export namespace Security {
 
   /**
@@ -16771,6 +16809,61 @@ export namespace Security {
      * @deprecated
      */
     summary?: string;
+  }
+}
+
+/**
+ * SessionReplay domain handles recording and replaying user interactions using rrweb.
+ */
+export namespace SessionReplay {
+
+  export interface EnableResponse extends ProtocolResponseWithError {
+    /**
+     * Whether the operation was successful.
+     */
+    success: boolean;
+  }
+
+  export interface DisableResponse extends ProtocolResponseWithError {
+    /**
+     * Whether the operation was successful.
+     */
+    success: boolean;
+  }
+
+  export interface SendEventRequest {
+    /**
+     * Array of rrweb events to send.
+     */
+    events?: any[];
+  }
+
+  export interface SendEventResponse extends ProtocolResponseWithError {
+    /**
+     * Whether the operation was successful.
+     */
+    success: boolean;
+  }
+
+  export interface ReplayStoredEventsResponse extends ProtocolResponseWithError {
+    /**
+     * Whether the operation was successful.
+     */
+    success: boolean;
+    /**
+     * Number of events replayed.
+     */
+    count?: integer;
+  }
+
+  /**
+   * Emitted when rrweb events are recorded.
+   */
+  export interface EventRecordedEvent {
+    /**
+     * Array of rrweb events.
+     */
+    events: any[];
   }
 }
 
@@ -22124,29 +22217,6 @@ export namespace Runtime {
      * Identifier of the context where the call was made.
      */
     executionContextId?: ExecutionContextId;
-  }
-}
-
-export namespace SessionReplay {
-
-  /**
-   * Request for sending rrweb events.
-   */
-  export interface SendEventRequest {
-    /**
-     * Array of rrweb events.
-     */
-    events: unknown[];
-  }
-
-  /**
-   * Fired when rrweb events are recorded.
-   */
-  export interface EventRecordedEvent {
-    /**
-     * Array of rrweb events.
-     */
-    events: unknown[];
   }
 }
 

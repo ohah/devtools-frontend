@@ -94,13 +94,15 @@ declare namespace ProtocolProxyApi {
 
     Preload: PreloadApi;
 
+    Redux: ReduxApi;
+
     Security: SecurityApi;
+
+    SessionReplay: SessionReplayApi;
 
     ServiceWorker: ServiceWorkerApi;
 
     Storage: StorageApi;
-
-    SessionReplay: SessionReplayApi;
 
     SystemInfo: SystemInfoApi;
 
@@ -203,13 +205,15 @@ declare namespace ProtocolProxyApi {
 
     Preload: PreloadDispatcher;
 
+    Redux: ReduxDispatcher;
+
     Security: SecurityDispatcher;
+
+    SessionReplay: SessionReplayDispatcher;
 
     ServiceWorker: ServiceWorkerDispatcher;
 
     Storage: StorageDispatcher;
-
-    SessionReplay: SessionReplayDispatcher;
 
     SystemInfo: SystemInfoDispatcher;
 
@@ -3735,6 +3739,17 @@ declare namespace ProtocolProxyApi {
 
   }
 
+  export interface ReduxApi {
+  }
+  export interface ReduxDispatcher {
+    /**
+     * Fired when a Redux DevTools Extension message is sent
+     * The message format matches Redux DevTools Extension spec
+     */
+    message(params: Protocol.Redux.MessageEvent): void;
+
+  }
+
   export interface SecurityApi {
     /**
      * Disables tracking security state changes.
@@ -3785,6 +3800,36 @@ declare namespace ProtocolProxyApi {
      * @deprecated
      */
     securityStateChanged(params: Protocol.Security.SecurityStateChangedEvent): void;
+
+  }
+
+  export interface SessionReplayApi {
+    /**
+     * Enables the SessionReplay domain and automatically replays stored events.
+     */
+    invoke_enable(): Promise<Protocol.SessionReplay.EnableResponse>;
+
+    /**
+     * Disables the SessionReplay domain.
+     */
+    invoke_disable(): Promise<Protocol.SessionReplay.DisableResponse>;
+
+    /**
+     * Sends rrweb events as CDP events.
+     */
+    invoke_sendEvent(params: Protocol.SessionReplay.SendEventRequest): Promise<Protocol.SessionReplay.SendEventResponse>;
+
+    /**
+     * Replays stored SessionReplay events from IndexedDB.
+     */
+    invoke_replayStoredEvents(): Promise<Protocol.SessionReplay.ReplayStoredEventsResponse>;
+
+  }
+  export interface SessionReplayDispatcher {
+    /**
+     * Emitted when rrweb events are recorded.
+     */
+    eventRecorded(params: Protocol.SessionReplay.EventRecordedEvent): void;
 
   }
 
@@ -4086,31 +4131,6 @@ declare namespace ProtocolProxyApi {
     attributionReportingReportSent(params: Protocol.Storage.AttributionReportingReportSentEvent): void;
 
     attributionReportingVerboseDebugReportSent(params: Protocol.Storage.AttributionReportingVerboseDebugReportSentEvent): void;
-
-  }
-
-  export interface SessionReplayApi {
-    /**
-     * Enables the SessionReplay domain.
-     */
-    invoke_enable(): Promise<Protocol.ProtocolResponseWithError>;
-
-    /**
-     * Disables the SessionReplay domain.
-     */
-    invoke_disable(): Promise<Protocol.ProtocolResponseWithError>;
-
-    /**
-     * Sends rrweb events to the SessionReplay domain.
-     */
-    invoke_sendEvent(params: Protocol.SessionReplay.SendEventRequest): Promise<Protocol.ProtocolResponseWithError>;
-
-  }
-  export interface SessionReplayDispatcher {
-    /**
-     * Issued when rrweb events are recorded.
-     */
-    eventRecorded(params: Protocol.SessionReplay.EventRecordedEvent): void;
 
   }
 

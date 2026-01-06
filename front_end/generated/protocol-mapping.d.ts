@@ -610,6 +610,11 @@ export namespace ProtocolMapping {
      */
     'Preload.preloadingAttemptSourcesUpdated': [Protocol.Preload.PreloadingAttemptSourcesUpdatedEvent];
     /**
+     * Fired when a Redux DevTools Extension message is sent
+     * The message format matches Redux DevTools Extension spec
+     */
+    'Redux.message': [Protocol.Redux.MessageEvent];
+    /**
      * There is a certificate error. If overriding certificate errors is enabled, then it should be
      * handled with the `handleCertificateError` command. Note: this event does not fire if the
      * certificate error has been allowed internally. Only one client per target should override
@@ -624,6 +629,10 @@ export namespace ProtocolMapping {
      * The security state of the page changed. No longer being sent.
      */
     'Security.securityStateChanged': [Protocol.Security.SecurityStateChangedEvent];
+    /**
+     * Emitted when rrweb events are recorded.
+     */
+    'SessionReplay.eventRecorded': [Protocol.SessionReplay.EventRecordedEvent];
     'ServiceWorker.workerErrorReported': [Protocol.ServiceWorker.WorkerErrorReportedEvent];
     'ServiceWorker.workerRegistrationUpdated': [Protocol.ServiceWorker.WorkerRegistrationUpdatedEvent];
     'ServiceWorker.workerVersionUpdated': [Protocol.ServiceWorker.WorkerVersionUpdatedEvent];
@@ -676,10 +685,6 @@ export namespace ProtocolMapping {
     'Storage.attributionReportingTriggerRegistered': [Protocol.Storage.AttributionReportingTriggerRegisteredEvent];
     'Storage.attributionReportingReportSent': [Protocol.Storage.AttributionReportingReportSentEvent];
     'Storage.attributionReportingVerboseDebugReportSent': [Protocol.Storage.AttributionReportingVerboseDebugReportSentEvent];
-    /**
-     * Fired when rrweb events are recorded.
-     */
-    'SessionReplay.eventRecorded': [Protocol.SessionReplay.EventRecordedEvent];
     /**
      * Issued when attached to target because of auto-attach or `attachToTarget` command.
      */
@@ -4365,6 +4370,34 @@ export namespace ProtocolMapping {
     'Security.setOverrideCertificateErrors': {
       paramsType: [Protocol.Security.SetOverrideCertificateErrorsRequest];
       returnType: void;
+    };
+    /**
+     * Enables the SessionReplay domain and automatically replays stored events.
+     */
+    'SessionReplay.enable': {
+      paramsType: [];
+      returnType: Protocol.SessionReplay.EnableResponse;
+    };
+    /**
+     * Disables the SessionReplay domain.
+     */
+    'SessionReplay.disable': {
+      paramsType: [];
+      returnType: Protocol.SessionReplay.DisableResponse;
+    };
+    /**
+     * Sends rrweb events as CDP events.
+     */
+    'SessionReplay.sendEvent': {
+      paramsType: [Protocol.SessionReplay.SendEventRequest?];
+      returnType: Protocol.SessionReplay.SendEventResponse;
+    };
+    /**
+     * Replays stored SessionReplay events from IndexedDB.
+     */
+    'SessionReplay.replayStoredEvents': {
+      paramsType: [];
+      returnType: Protocol.SessionReplay.ReplayStoredEventsResponse;
     };
     'ServiceWorker.deliverPushMessage': {
       paramsType: [Protocol.ServiceWorker.DeliverPushMessageRequest];

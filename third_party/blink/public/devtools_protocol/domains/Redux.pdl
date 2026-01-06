@@ -1,0 +1,29 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Contributing to Chrome DevTools Protocol: https://goo.gle/devtools-contribution-guide-cdp
+
+# Redux DevTools Protocol domain for debugging Redux applications.
+# Messages are sent in Redux DevTools Extension spec format
+experimental domain Redux
+
+  # Fired when a Redux DevTools Extension message is sent
+  # The message format matches Redux DevTools Extension spec
+  event message
+    parameters
+      # Message type (INIT_INSTANCE, ACTION, STATE, ERROR, etc.)
+      string type
+      # Message payload (varies by type)
+      optional any payload
+      # Message source (always '@devtools-page')
+      string source
+      # Unique identifier for the store instance
+      integer instanceId
+      # Additional fields depending on message type
+      optional any action
+      optional any libConfig
+      optional integer maxAge
+      optional integer nextActionId
+      optional string message
+

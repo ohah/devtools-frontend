@@ -16094,7 +16094,7 @@
                         },
                         {
                             "name": "expires",
-                            "description": "Cookie expiration date as the number of seconds since the UNIX epoch.\nThe value is set to -1 if the expiry date is not set.\nThe value can be null for values that cannot be represented in\nJSON (\u00b1Inf).",
+                            "description": "Cookie expiration date as the number of seconds since the UNIX epoch.\nThe value is set to -1 if the expiry date is not set.\nThe value can be null for values that cannot be represented in\nJSON (\uc9f9Inf).",
                             "type": "number"
                         },
                         {
@@ -24752,6 +24752,66 @@
             ]
         },
         {
+            "domain": "Redux",
+            "description": "Redux DevTools Protocol domain for debugging Redux applications.\nMessages are sent in Redux DevTools Extension spec format",
+            "experimental": true,
+            "events": [
+                {
+                    "name": "message",
+                    "description": "Fired when a Redux DevTools Extension message is sent\nThe message format matches Redux DevTools Extension spec",
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "description": "Message type (INIT_INSTANCE, ACTION, STATE, ERROR, etc.)",
+                            "type": "string"
+                        },
+                        {
+                            "name": "payload",
+                            "description": "Message payload (varies by type)",
+                            "optional": true,
+                            "type": "any"
+                        },
+                        {
+                            "name": "source",
+                            "description": "Message source (always '@devtools-page')",
+                            "type": "string"
+                        },
+                        {
+                            "name": "instanceId",
+                            "description": "Unique identifier for the store instance",
+                            "type": "integer"
+                        },
+                        {
+                            "name": "action",
+                            "description": "Additional fields depending on message type",
+                            "optional": true,
+                            "type": "any"
+                        },
+                        {
+                            "name": "libConfig",
+                            "optional": true,
+                            "type": "any"
+                        },
+                        {
+                            "name": "maxAge",
+                            "optional": true,
+                            "type": "integer"
+                        },
+                        {
+                            "name": "nextActionId",
+                            "optional": true,
+                            "type": "integer"
+                        },
+                        {
+                            "name": "message",
+                            "optional": true,
+                            "type": "string"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "domain": "Security",
             "types": [
                 {
@@ -25170,6 +25230,90 @@
                             "deprecated": true,
                             "optional": true,
                             "type": "string"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "domain": "SessionReplay",
+            "description": "SessionReplay domain handles recording and replaying user interactions using rrweb.",
+            "experimental": true,
+            "commands": [
+                {
+                    "name": "enable",
+                    "description": "Enables the SessionReplay domain and automatically replays stored events.",
+                    "returns": [
+                        {
+                            "name": "success",
+                            "description": "Whether the operation was successful.",
+                            "type": "boolean"
+                        }
+                    ]
+                },
+                {
+                    "name": "disable",
+                    "description": "Disables the SessionReplay domain.",
+                    "returns": [
+                        {
+                            "name": "success",
+                            "description": "Whether the operation was successful.",
+                            "type": "boolean"
+                        }
+                    ]
+                },
+                {
+                    "name": "sendEvent",
+                    "description": "Sends rrweb events as CDP events.",
+                    "parameters": [
+                        {
+                            "name": "events",
+                            "description": "Array of rrweb events to send.",
+                            "optional": true,
+                            "type": "array",
+                            "items": {
+                                "type": "any"
+                            }
+                        }
+                    ],
+                    "returns": [
+                        {
+                            "name": "success",
+                            "description": "Whether the operation was successful.",
+                            "type": "boolean"
+                        }
+                    ]
+                },
+                {
+                    "name": "replayStoredEvents",
+                    "description": "Replays stored SessionReplay events from IndexedDB.",
+                    "returns": [
+                        {
+                            "name": "success",
+                            "description": "Whether the operation was successful.",
+                            "type": "boolean"
+                        },
+                        {
+                            "name": "count",
+                            "description": "Number of events replayed.",
+                            "optional": true,
+                            "type": "integer"
+                        }
+                    ]
+                }
+            ],
+            "events": [
+                {
+                    "name": "eventRecorded",
+                    "description": "Emitted when rrweb events are recorded.",
+                    "parameters": [
+                        {
+                            "name": "events",
+                            "description": "Array of rrweb events.",
+                            "type": "array",
+                            "items": {
+                                "type": "any"
+                            }
                         }
                     ]
                 }
