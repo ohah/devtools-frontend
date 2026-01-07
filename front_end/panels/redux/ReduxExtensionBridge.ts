@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import type * as ProtocolClient from '../../core/protocol_client/protocol_client.js';
 import * as SDK from '../../core/sdk/sdk.js';
-import * as ProtocolClient from '../../core/protocol_client/protocol_client.js';
-import * as Protocol from '../../generated/protocol.js';
+import type * as Protocol from '../../generated/protocol.js';
 
 /**
  * Redux DevTools Extension과의 통신 브릿지 / Redux DevTools Extension과의 통신 브릿지
@@ -29,14 +29,14 @@ export class ReduxExtensionBridge {
    * Inject chrome.runtime API into iframe / iframe에 chrome.runtime API 주입
    */
   private injectExtensionAPI(): void {
-    if (!this.iframeWindow) return;
+    if (!this.iframeWindow) {return;}
 
     // MessageChannel을 사용하여 가상의 MessagePort 생성 / MessageChannel을 사용하여 가상의 MessagePort 생성
     const channel = new MessageChannel();
     this.messagePort = channel.port1;
 
     // MessagePort로 메시지 수신 / MessagePort로 메시지 수신
-    this.messagePort.onmessage = (event) => {
+    this.messagePort.onmessage = event => {
       this.handleExtensionMessage(event.data);
     };
 
@@ -78,6 +78,14 @@ export class ReduxExtensionBridge {
           eval: (expression: string, callback?: (result: any, exceptionInfo?: any) => void) => {
             this.evaluateInInspectedPage(expression, callback);
           },
+          // Get resources from inspected page / inspected page의 리소스 가져오기
+          getResources: (callback?: (resources: Array<{url: string}>) => void) => {
+            this.getPageResources(callback);
+          },
+          // Tab ID (not used in this context) / Tab ID (이 컨텍스트에서 사용되지 않음)
+          get tabId() {
+            return undefined;
+          },
         },
       },
     };
@@ -96,7 +104,7 @@ export class ReduxExtensionBridge {
    * Send message to Redux DevTools Extension iframe / Redux DevTools Extension iframe으로 메시지 전송
    */
   private sendToExtension(message: any): void {
-    if (!this.iframeWindow || !this.messagePort) return;
+    if (!this.iframeWindow || !this.messagePort) {return;}
 
     // MessagePort로 메시지 전송 / MessagePort로 메시지 전송
     this.messagePort.postMessage(message);
@@ -141,7 +149,7 @@ export class ReduxExtensionBridge {
     const extensionMessage = {
       type: 'REDUX_MESSAGE',
       method: event.method,
-      params: params,
+      params,
       timestamp: Date.now(),
     };
 
@@ -156,19 +164,19 @@ export class ReduxExtensionBridge {
     callback?: (result: any, exceptionInfo?: any) => void
   ): void {
     if (!this.target) {
-      if (callback) callback(null, { isException: true, value: 'No target available' });
+      if (callback) {callback(null, { isException: true, value: 'No target available' });}
       return;
     }
 
     const runtimeModel = this.target.model(SDK.RuntimeModel.RuntimeModel);
     if (!runtimeModel) {
-      if (callback) callback(null, { isException: true, value: 'No runtime model available' });
+      if (callback) {callback(null, { isException: true, value: 'No runtime model available' });}
       return;
     }
 
     // Use Runtime API directly / Runtime API 직접 사용
     this.target.runtimeAgent().invoke_evaluate({
-      expression: expression,
+      expression,
       returnByValue: true,
     }).then((response: Protocol.Runtime.EvaluateResponse) => {
       if (callback) {
@@ -182,8 +190,56 @@ export class ReduxExtensionBridge {
         }
       }
     }).catch((error: Error) => {
-      if (callback) callback(null, { isException: true, value: error.message });
+      if (callback) {callback(null, { isException: true, value: error.message });}
     });
+  }
+
+  /**
+   * Get page resources / 페이지 리소스 가져오기
+   */
+  private getPageResources(callback?: (resources: Array<{url: string}>) => void): void {
+    // Always return at least the current page URL / 항상 최소한 현재 페이지 URL 반환
+    const resources: Array<{url: string}> = [];
+
+    if (!this.target) {
+      // Fallback: use about:blank if no target / 타겟이 없으면 about:blank 사용
+      if (callback) {
+        callback([{url: 'about:blank'}]);
+      }
+      return;
+    }
+
+    // Get inspected URL (current page URL) / inspected URL 가져오기 (현재 페이지 URL)
+    const inspectedUrl = this.target.inspectedURL();
+    if (inspectedUrl) {
+      resources.push({url: inspectedUrl});
+    }
+
+    const resourceTreeModel = this.target.model(SDK.ResourceTreeModel.ResourceTreeModel);
+    if (resourceTreeModel?.mainFrame) {
+      // Get main frame URL if different from inspected URL / inspected URL과 다르면 메인 프레임 URL 가져오기
+      const mainFrameUrl = resourceTreeModel.mainFrame.url;
+      if (mainFrameUrl && mainFrameUrl !== inspectedUrl && !resources.some(r => r.url === mainFrameUrl)) {
+        resources.push({url: mainFrameUrl});
+      }
+
+      // Get all resources from the main frame / 메인 프레임의 모든 리소스 가져오기
+      resourceTreeModel.mainFrame.resources().forEach(resource => {
+        const url = resource.url;
+        if (url && !resources.some(r => r.url === url)) {
+          resources.push({url});
+        }
+      });
+    }
+
+    // Ensure at least one resource is returned / 최소한 하나의 리소스는 반환
+    if (resources.length === 0) {
+      resources.push({url: inspectedUrl || 'about:blank'});
+    }
+
+    if (callback) {
+      callback(resources);
+    }
   }
 
   /**
