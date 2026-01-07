@@ -46,7 +46,9 @@ include domains/Page.pdl
 include domains/Performance.pdl
 include domains/PerformanceTimeline.pdl
 include domains/Preload.pdl
+include domains/Redux.pdl
 include domains/Security.pdl
+include domains/SessionReplay.pdl
 include domains/ServiceWorker.pdl
 include domains/Storage.pdl
 include domains/SystemInfo.pdl
