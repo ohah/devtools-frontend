@@ -7,6 +7,21 @@ import * as SDK from '../../core/sdk/sdk.js';
 import type * as Protocol from '../../generated/protocol.js';
 
 /**
+ * Redux DevTools Extension message format / Redux DevTools Extension 메시지 형식
+ * Matches the format used by Redux DevTools Extension exactly / Redux DevTools Extension에서 사용하는 형식과 정확히 일치
+ */
+interface ReduxExtensionMessage {
+  type: Protocol.Redux.MessageType;
+  instanceId: number;
+  source: string;
+  payload?: string;
+  action?: string;
+  name?: string;
+  maxAge?: number;
+  nextActionId?: number;
+}
+
+/**
  * Redux DevTools Extension과의 통신 브릿지 / Redux DevTools Extension과의 통신 브릿지
  * Extension의 chrome.runtime API를 시뮬레이션하고 CDP 메시지를 Extension 형식으로 변환 / Extension의 chrome.runtime API를 시뮬레이션하고 CDP 메시지를 Extension 형식으로 변환
  */
@@ -15,7 +30,7 @@ export class ReduxExtensionBridge {
   private target: SDK.Target.Target | null = null;
   private observer: ProtocolClient.CDPConnection.CDPConnectionObserver | null = null;
   private messagePort: MessagePort | null = null;
-  private messageListeners: Array<(message: any) => void> = [];
+  private messageListeners: Array<(message: unknown) => void> = [];
 
   /**
    * Initialize bridge with iframe window / iframe window로 브릿지 초기화
@@ -41,15 +56,17 @@ export class ReduxExtensionBridge {
     };
 
     // Redux DevTools Extension이 사용하는 chrome.runtime API 시뮬레이션 / Redux DevTools Extension이 사용하는 chrome.runtime API 시뮬레이션
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (this.iframeWindow as any).chrome = {
       runtime: {
         // Connect to background script / background script에 연결
-        connect: (options?: { name?: string }) => {
+        connect: (_options?: { name?: string }) => {
           // MessagePort를 반환하여 Extension이 통신할 수 있도록 함 / MessagePort를 반환하여 Extension이 통신할 수 있도록 함
           return this.messagePort;
         },
         // Send message to background script / background script로 메시지 전송
-        sendMessage: (message: any, callback?: (response: any) => void) => {
+
+        sendMessage: (message: unknown, callback?: (response: { success: boolean }) => void) => {
           this.handleExtensionMessage(message);
           if (callback) {
             callback({ success: true });
@@ -57,10 +74,12 @@ export class ReduxExtensionBridge {
         },
         // Listen to messages from background script / background script로부터 메시지 수신
         onMessage: {
-          addListener: (callback: (message: any) => void) => {
+
+          addListener: (callback: (message: unknown) => void) => {
             this.messageListeners.push(callback);
           },
-          removeListener: (callback: (message: any) => void) => {
+
+          removeListener: (callback: (message: unknown) => void) => {
             const index = this.messageListeners.indexOf(callback);
             if (index > -1) {
               this.messageListeners.splice(index, 1);
@@ -75,7 +94,8 @@ export class ReduxExtensionBridge {
       devtools: {
         inspectedWindow: {
           // Evaluate script in inspected page / inspected page에서 스크립트 실행
-          eval: (expression: string, callback?: (result: any, exceptionInfo?: any) => void) => {
+
+          eval: (expression: string, callback?: (result: unknown, exceptionInfo?: { isException: boolean, value: string }) => void) => {
             this.evaluateInInspectedPage(expression, callback);
           },
           // Get resources from inspected page / inspected page의 리소스 가져오기
@@ -94,16 +114,16 @@ export class ReduxExtensionBridge {
   /**
    * Handle messages from Redux DevTools Extension / Redux DevTools Extension으로부터 메시지 처리
    */
-  private handleExtensionMessage(message: any): void {
+  private handleExtensionMessage(_message: unknown): void {
     // Redux DevTools Extension의 메시지를 처리 / Redux DevTools Extension의 메시지를 처리
     // 여기서는 CDP 메시지로 변환하거나 필요한 작업 수행 / 여기서는 CDP 메시지로 변환하거나 필요한 작업 수행
-    console.log('[ReduxExtensionBridge] Received message from extension:', message);
+    // Currently no-op, but can be extended to handle extension-to-page messages / 현재는 no-op이지만 extension-to-page 메시지 처리로 확장 가능
   }
 
   /**
    * Send message to Redux DevTools Extension iframe / Redux DevTools Extension iframe으로 메시지 전송
    */
-  private sendToExtension(message: any): void {
+  private sendToExtension(message: ReduxExtensionMessage): void {
     if (!this.iframeWindow || !this.messagePort) {return;}
 
     // MessagePort로 메시지 전송 / MessagePort로 메시지 전송
@@ -125,9 +145,7 @@ export class ReduxExtensionBridge {
       ): void => {
         // Redux CDP 이벤트를 Redux DevTools Extension 형식으로 변환 / Redux CDP 이벤트를 Redux DevTools Extension 형식으로 변환
         const method = event.method as string;
-        if (method === 'Redux.init' ||
-            method === 'Redux.actionDispatched' ||
-            method === 'Redux.error') {
+        if (method === 'Redux.message') {
           this.convertCDPToExtensionMessage(event);
         }
       },
@@ -141,18 +159,26 @@ export class ReduxExtensionBridge {
 
   /**
    * Convert CDP message to Extension message format / CDP 메시지를 Extension 메시지 형식으로 변환
+   * Matches Redux DevTools Extension message format exactly / Redux DevTools Extension 메시지 형식과 정확히 일치
    */
-  private convertCDPToExtensionMessage(event: ProtocolClient.CDPConnection.CDPEvent<any>): void {
-    const params = event.params as any;
+  private convertCDPToExtensionMessage(event: ProtocolClient.CDPConnection.CDPEvent<ProtocolClient.CDPConnection.Event>): void {
+    const params = event.params as Protocol.Redux.MessageEvent;
 
+    // Redux.message 이벤트는 params에 직접 메시지 정보가 있음 / Redux.message event has message info directly in params
     // Redux DevTools Extension이 기대하는 메시지 형식으로 변환 / Redux DevTools Extension이 기대하는 메시지 형식으로 변환
-    const extensionMessage = {
-      type: 'REDUX_MESSAGE',
-      method: event.method,
-      params,
-      timestamp: Date.now(),
+    const extensionMessage: ReduxExtensionMessage = {
+      type: params.type,
+      instanceId: params.instanceId,
+      source: params.source,
+      payload: params.payload,
+      action: params.action,
+      name: params.name,
+      maxAge: params.maxAge,
+      nextActionId: params.nextActionId,
     };
 
+    // Send to extension via MessagePort (simulating chrome.runtime.Port) / MessagePort를 통해 extension으로 전송 (chrome.runtime.Port 시뮬레이션)
+    // Redux DevTools Extension expects messages via chrome.runtime.Port.postMessage / Redux DevTools Extension은 chrome.runtime.Port.postMessage를 통해 메시지를 기대함
     this.sendToExtension(extensionMessage);
   }
 
@@ -161,7 +187,7 @@ export class ReduxExtensionBridge {
    */
   private evaluateInInspectedPage(
     expression: string,
-    callback?: (result: any, exceptionInfo?: any) => void
+    callback?: (result: unknown, exceptionInfo?: { isException: boolean, value: string }) => void
   ): void {
     if (!this.target) {
       if (callback) {callback(null, { isException: true, value: 'No target available' });}
