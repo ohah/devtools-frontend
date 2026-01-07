@@ -1,0 +1,40 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Contributing to Chrome DevTools Protocol: https://goo.gle/devtools-contribution-guide-cdp
+
+# SessionReplay domain allows recording and replaying user sessions using rrweb.
+# It provides integration with rrweb for session replay functionality.
+domain SessionReplay
+
+  # Request for sending rrweb events.
+  type SendEventRequest extends object
+    properties
+      # Array of rrweb events.
+      array of unknown events
+
+  # Fired when rrweb events are recorded.
+  type EventRecordedEvent extends object
+    properties
+      # Array of rrweb events.
+      array of unknown events
+
+  # Enables the SessionReplay domain.
+  command enable
+
+  # Disables the SessionReplay domain.
+  command disable
+
+  # Sends rrweb events to the SessionReplay domain.
+  command sendEvent
+    parameters
+      # Array of rrweb events.
+      array of unknown events
+
+  # Issued when rrweb events are recorded.
+  event eventRecorded
+    parameters
+      # Array of rrweb events.
+      array of unknown events
+
