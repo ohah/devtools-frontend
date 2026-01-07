@@ -9,145 +9,63 @@
 domain Redux
   depends on Runtime
 
-  # Redux message type.
+  # Redux message type matching Redux DevTools Extension format / Redux DevTools Extension 형식과 일치하는 Redux 메시지 타입
   type MessageType extends string
     enum
+      INIT_INSTANCE
       INIT
       ACTION
       STATE
       ERROR
 
-  # Redux message sent from the application or DevTools.
-  type ReduxMessage extends object
-    properties
-      # Message type (INIT, ACTION, STATE, ERROR).
-      MessageType type
-      # Action payload (for ACTION type).
-      optional string action
-      # State payload (for STATE type).
-      optional string payload
-      # Source of the message (e.g., "@devtools-page", "@redux-devtools").
-      optional string source
-      # Instance ID of the Redux store.
-      optional integer instanceId
-      # Store name.
-      optional string name
-      # Maximum age of actions to keep.
-      optional integer maxAge
-      # Next action ID.
-      optional integer nextActionId
-      # Error message (for ERROR type).
-      optional string error
-      # Timestamp when the message was created.
-      optional Runtime.Timestamp timestamp
-
   # Sends a Redux message from the application to DevTools or vice versa.
-  # This is a unified method that handles all Redux message types.
+  # This is the unified method that handles all Redux message types.
+  # Matches Redux DevTools Extension message format exactly / Redux DevTools Extension 메시지 형식과 정확히 일치
   command message
     parameters
       # Message type.
       MessageType type
       # Action payload (JSON string, for ACTION type).
       optional string action
-      # State payload (JSON string, for STATE type).
+      # State payload (JSON string, for INIT and ACTION types).
       optional string payload
-      # Source of the message.
-      optional string source
+      # Source of the message (e.g., "@devtools-page", "@devtools-extension").
+      string source
       # Instance ID of the Redux store.
-      optional integer instanceId
-      # Store name.
+      integer instanceId
+      # Store name (for INIT type).
       optional string name
-      # Maximum age of actions to keep.
+      # Maximum age of actions to keep (for ACTION type).
       optional integer maxAge
-      # Next action ID.
+      # Next action ID (for ACTION type).
       optional integer nextActionId
       # Error message (for ERROR type).
       optional string error
       # Timestamp when the message was created.
       optional Runtime.Timestamp timestamp
 
-  # Initializes a Redux store instance.
-  # This is a convenience method that sends an INIT message.
-  command init
-    parameters
-      # Instance ID of the Redux store.
-      integer instanceId
-      # Store name.
-      optional string name
-      # Initial state (JSON string).
-      optional string state
-      # Maximum age of actions to keep.
-      optional integer maxAge
-      # Timestamp when the store was initialized.
-      optional Runtime.Timestamp timestamp
-
-  # Sends an action dispatch event.
-  # This is a convenience method that sends an ACTION message.
-  command actionDispatched
-    parameters
-      # Instance ID of the Redux store.
-      integer instanceId
-      # Action payload (JSON string).
-      string action
-      # Current state (JSON string).
-      optional string payload
-      # Timestamp when the action was dispatched.
-      optional Runtime.Timestamp timestamp
-
-  # Sends an error event.
-  # This is a convenience method that sends an ERROR message.
-  command error
-    parameters
-      # Instance ID of the Redux store.
-      integer instanceId
-      # Error message.
-      string error
-      # Store name.
-      optional string name
-      # Timestamp when the error occurred.
-      optional Runtime.Timestamp timestamp
-
   # Issued when a Redux message is received from the application.
+  # Matches Redux DevTools Extension message format exactly / Redux DevTools Extension 메시지 형식과 정확히 일치
   event message
     parameters
-      # The Redux message.
-      ReduxMessage message
-
-  # Issued when a Redux store is initialized.
-  event init
-    parameters
-      # Instance ID of the Redux store.
-      integer instanceId
-      # Store name.
-      optional string name
-      # Initial state (JSON string).
-      optional string state
-      # Maximum age of actions to keep.
-      optional integer maxAge
-      # Timestamp when the store was initialized.
-      optional Runtime.Timestamp timestamp
-
-  # Issued when a Redux action is dispatched.
-  event actionDispatched
-    parameters
-      # Instance ID of the Redux store.
-      integer instanceId
-      # Action payload (JSON string).
-      string action
-      # Current state (JSON string).
+      # Message type.
+      MessageType type
+      # Action payload (JSON string, for ACTION type).
+      optional string action
+      # State payload (JSON string, for INIT and ACTION types).
       optional string payload
-      # Timestamp when the action was dispatched.
-      optional Runtime.Timestamp timestamp
-
-  # Issued when a Redux error occurs.
-  event error
-    parameters
+      # Source of the message (e.g., "@devtools-page", "@devtools-extension").
+      string source
       # Instance ID of the Redux store.
       integer instanceId
-      # Error message.
-      string error
-      # Store name.
+      # Store name (for INIT type).
       optional string name
-      # Timestamp when the error occurred.
+      # Maximum age of actions to keep (for ACTION type).
+      optional integer maxAge
+      # Next action ID (for ACTION type).
+      optional integer nextActionId
+      # Error message (for ERROR type).
+      optional string error
+      # Timestamp when the message was created.
       optional Runtime.Timestamp timestamp
 

@@ -24760,86 +24760,21 @@
             "types": [
                 {
                     "id": "MessageType",
-                    "description": "Redux message type.",
+                    "description": "Redux message type matching Redux DevTools Extension format / Redux DevTools Extension \ud615\uc2dd\uacfc \uc77c\uce58\ud558\ub294 Redux \uba54\uc2dc\uc9c0 \ud0c0\uc785",
                     "type": "string",
                     "enum": [
+                        "INIT_INSTANCE",
                         "INIT",
                         "ACTION",
                         "STATE",
                         "ERROR"
-                    ]
-                },
-                {
-                    "id": "ReduxMessage",
-                    "description": "Redux message sent from the application or DevTools.",
-                    "type": "object",
-                    "properties": [
-                        {
-                            "name": "type",
-                            "description": "Message type (INIT, ACTION, STATE, ERROR).",
-                            "$ref": "MessageType"
-                        },
-                        {
-                            "name": "action",
-                            "description": "Action payload (for ACTION type).",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "payload",
-                            "description": "State payload (for STATE type).",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "source",
-                            "description": "Source of the message (e.g., \"@devtools-page\", \"@redux-devtools\").",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "instanceId",
-                            "description": "Instance ID of the Redux store.",
-                            "optional": true,
-                            "type": "integer"
-                        },
-                        {
-                            "name": "name",
-                            "description": "Store name.",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "maxAge",
-                            "description": "Maximum age of actions to keep.",
-                            "optional": true,
-                            "type": "integer"
-                        },
-                        {
-                            "name": "nextActionId",
-                            "description": "Next action ID.",
-                            "optional": true,
-                            "type": "integer"
-                        },
-                        {
-                            "name": "error",
-                            "description": "Error message (for ERROR type).",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "timestamp",
-                            "description": "Timestamp when the message was created.",
-                            "optional": true,
-                            "$ref": "Runtime.Timestamp"
-                        }
                     ]
                 }
             ],
             "commands": [
                 {
                     "name": "message",
-                    "description": "Sends a Redux message from the application to DevTools or vice versa.\nThis is a unified method that handles all Redux message types.",
+                    "description": "Sends a Redux message from the application to DevTools or vice versa.\nThis is the unified method that handles all Redux message types.\nMatches Redux DevTools Extension message format exactly / Redux DevTools Extension \uba54\uc2dc\uc9c0 \ud615\uc2dd\uacfc \uc815\ud655\ud788 \uc77c\uce58",
                     "parameters": [
                         {
                             "name": "type",
@@ -24854,37 +24789,35 @@
                         },
                         {
                             "name": "payload",
-                            "description": "State payload (JSON string, for STATE type).",
+                            "description": "State payload (JSON string, for INIT and ACTION types).",
                             "optional": true,
                             "type": "string"
                         },
                         {
                             "name": "source",
-                            "description": "Source of the message.",
-                            "optional": true,
+                            "description": "Source of the message (e.g., \"@devtools-page\", \"@devtools-extension\").",
                             "type": "string"
                         },
                         {
                             "name": "instanceId",
                             "description": "Instance ID of the Redux store.",
-                            "optional": true,
                             "type": "integer"
                         },
                         {
                             "name": "name",
-                            "description": "Store name.",
+                            "description": "Store name (for INIT type).",
                             "optional": true,
                             "type": "string"
                         },
                         {
                             "name": "maxAge",
-                            "description": "Maximum age of actions to keep.",
+                            "description": "Maximum age of actions to keep (for ACTION type).",
                             "optional": true,
                             "type": "integer"
                         },
                         {
                             "name": "nextActionId",
-                            "description": "Next action ID.",
+                            "description": "Next action ID (for ACTION type).",
                             "optional": true,
                             "type": "integer"
                         },
@@ -24901,115 +24834,35 @@
                             "$ref": "Runtime.Timestamp"
                         }
                     ]
-                },
-                {
-                    "name": "init",
-                    "description": "Initializes a Redux store instance.\nThis is a convenience method that sends an INIT message.",
-                    "parameters": [
-                        {
-                            "name": "instanceId",
-                            "description": "Instance ID of the Redux store.",
-                            "type": "integer"
-                        },
-                        {
-                            "name": "name",
-                            "description": "Store name.",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "state",
-                            "description": "Initial state (JSON string).",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "maxAge",
-                            "description": "Maximum age of actions to keep.",
-                            "optional": true,
-                            "type": "integer"
-                        },
-                        {
-                            "name": "timestamp",
-                            "description": "Timestamp when the store was initialized.",
-                            "optional": true,
-                            "$ref": "Runtime.Timestamp"
-                        }
-                    ]
-                },
-                {
-                    "name": "actionDispatched",
-                    "description": "Sends an action dispatch event.\nThis is a convenience method that sends an ACTION message.",
-                    "parameters": [
-                        {
-                            "name": "instanceId",
-                            "description": "Instance ID of the Redux store.",
-                            "type": "integer"
-                        },
-                        {
-                            "name": "action",
-                            "description": "Action payload (JSON string).",
-                            "type": "string"
-                        },
-                        {
-                            "name": "payload",
-                            "description": "Current state (JSON string).",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "timestamp",
-                            "description": "Timestamp when the action was dispatched.",
-                            "optional": true,
-                            "$ref": "Runtime.Timestamp"
-                        }
-                    ]
-                },
-                {
-                    "name": "error",
-                    "description": "Sends an error event.\nThis is a convenience method that sends an ERROR message.",
-                    "parameters": [
-                        {
-                            "name": "instanceId",
-                            "description": "Instance ID of the Redux store.",
-                            "type": "integer"
-                        },
-                        {
-                            "name": "error",
-                            "description": "Error message.",
-                            "type": "string"
-                        },
-                        {
-                            "name": "name",
-                            "description": "Store name.",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "timestamp",
-                            "description": "Timestamp when the error occurred.",
-                            "optional": true,
-                            "$ref": "Runtime.Timestamp"
-                        }
-                    ]
                 }
             ],
             "events": [
                 {
                     "name": "message",
-                    "description": "Issued when a Redux message is received from the application.",
+                    "description": "Issued when a Redux message is received from the application.\nMatches Redux DevTools Extension message format exactly / Redux DevTools Extension \uba54\uc2dc\uc9c0 \ud615\uc2dd\uacfc \uc815\ud655\ud788 \uc77c\uce58",
                     "parameters": [
                         {
-                            "name": "message",
-                            "description": "The Redux message.",
-                            "$ref": "ReduxMessage"
-                        }
-                    ]
-                },
-                {
-                    "name": "init",
-                    "description": "Issued when a Redux store is initialized.",
-                    "parameters": [
+                            "name": "type",
+                            "description": "Message type.",
+                            "$ref": "MessageType"
+                        },
+                        {
+                            "name": "action",
+                            "description": "Action payload (JSON string, for ACTION type).",
+                            "optional": true,
+                            "type": "string"
+                        },
+                        {
+                            "name": "payload",
+                            "description": "State payload (JSON string, for INIT and ACTION types).",
+                            "optional": true,
+                            "type": "string"
+                        },
+                        {
+                            "name": "source",
+                            "description": "Source of the message (e.g., \"@devtools-page\", \"@devtools-extension\").",
+                            "type": "string"
+                        },
                         {
                             "name": "instanceId",
                             "description": "Instance ID of the Redux store.",
@@ -25017,81 +24870,31 @@
                         },
                         {
                             "name": "name",
-                            "description": "Store name.",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "state",
-                            "description": "Initial state (JSON string).",
+                            "description": "Store name (for INIT type).",
                             "optional": true,
                             "type": "string"
                         },
                         {
                             "name": "maxAge",
-                            "description": "Maximum age of actions to keep.",
+                            "description": "Maximum age of actions to keep (for ACTION type).",
                             "optional": true,
                             "type": "integer"
                         },
                         {
-                            "name": "timestamp",
-                            "description": "Timestamp when the store was initialized.",
+                            "name": "nextActionId",
+                            "description": "Next action ID (for ACTION type).",
                             "optional": true,
-                            "$ref": "Runtime.Timestamp"
-                        }
-                    ]
-                },
-                {
-                    "name": "actionDispatched",
-                    "description": "Issued when a Redux action is dispatched.",
-                    "parameters": [
-                        {
-                            "name": "instanceId",
-                            "description": "Instance ID of the Redux store.",
-                            "type": "integer"
-                        },
-                        {
-                            "name": "action",
-                            "description": "Action payload (JSON string).",
-                            "type": "string"
-                        },
-                        {
-                            "name": "payload",
-                            "description": "Current state (JSON string).",
-                            "optional": true,
-                            "type": "string"
-                        },
-                        {
-                            "name": "timestamp",
-                            "description": "Timestamp when the action was dispatched.",
-                            "optional": true,
-                            "$ref": "Runtime.Timestamp"
-                        }
-                    ]
-                },
-                {
-                    "name": "error",
-                    "description": "Issued when a Redux error occurs.",
-                    "parameters": [
-                        {
-                            "name": "instanceId",
-                            "description": "Instance ID of the Redux store.",
                             "type": "integer"
                         },
                         {
                             "name": "error",
-                            "description": "Error message.",
-                            "type": "string"
-                        },
-                        {
-                            "name": "name",
-                            "description": "Store name.",
+                            "description": "Error message (for ERROR type).",
                             "optional": true,
                             "type": "string"
                         },
                         {
                             "name": "timestamp",
-                            "description": "Timestamp when the error occurred.",
+                            "description": "Timestamp when the message was created.",
                             "optional": true,
                             "$ref": "Runtime.Timestamp"
                         }
