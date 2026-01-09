@@ -52,6 +52,7 @@ import {BackgroundServiceModel} from './BackgroundServiceModel.js';
 import {BackgroundServiceView} from './BackgroundServiceView.js';
 import {BounceTrackingMitigationsTreeElement} from './BounceTrackingMitigationsTreeElement.js';
 import {type DOMStorage, DOMStorageModel, Events as DOMStorageModelEvents} from './DOMStorageModel.js';
+import {type MMKVStorage, MMKVStorageModel, Events as MMKVStorageModelEvents} from './MMKVStorageModel.js';
 import {
   Events as ExtensionStorageModelEvents,
   type ExtensionStorage,
@@ -124,6 +125,18 @@ const UIStrings = {
    * @description Text in the Application panel describing the session storage tab.
    */
   sessionStorageDescription: 'On this page you can view, add, edit, and delete session storage key-value pairs.',
+  /**
+   * @description Text in Application Panel Sidebar of the Application panel
+   */
+  mmkv: 'MMKV',
+  /**
+   * @description Text in Application Panel Sidebar of the Application panel
+   */
+  noMMKV: 'No MMKV storage detected',
+  /**
+   * @description Text in the Application panel describing the MMKV storage tab.
+   */
+  mmkvDescription: 'On this page you can view, add, edit, and delete MMKV storage key-value pairs.',
   /**
    * @description Text in Application Panel Sidebar of the Application panel
    */
@@ -326,6 +339,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox implements SDK.Targe
   serviceWorkersTreeElement: ServiceWorkersTreeElement;
   localStorageListTreeElement: ExpandableApplicationPanelTreeElement;
   sessionStorageListTreeElement: ExpandableApplicationPanelTreeElement;
+  mmkvListTreeElement: ExpandableApplicationPanelTreeElement;
   extensionStorageListTreeElement: ExpandableApplicationPanelTreeElement;
   indexedDBListTreeElement: IndexedDBTreeElement;
   interestGroupTreeElement: InterestGroupTreeElement;
@@ -346,6 +360,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox implements SDK.Targe
   preloadingSummaryTreeElement: PreloadingSummaryTreeElement|undefined;
   private readonly resourcesSection: ResourcesSection;
   private domStorageTreeElements: Map<DOMStorage, DOMStorageTreeElement>;
+  private mmkvStorageTreeElements: Map<MMKVStorage, MMKVStorageTreeElement>;
   private extensionIdToStorageTreeParentElement: Map<string, ExtensionStorageTreeParentElement>;
   private extensionStorageModels: ExtensionStorageModel[];
   private extensionStorageTreeElements: Map<string, ExtensionStorageTreeElement>;
@@ -406,6 +421,14 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox implements SDK.Targe
     this.sessionStorageListTreeElement.setLeadingIcons([sessionStorageIcon]);
 
     storageTreeElement.appendChild(this.sessionStorageListTreeElement);
+
+    this.mmkvListTreeElement = new ExpandableApplicationPanelTreeElement(
+        panel, i18nString(UIStrings.mmkv), i18nString(UIStrings.noMMKV),
+        i18nString(UIStrings.mmkvDescription), 'mmkv-storage');
+    const mmkvIcon = createIcon('table');
+    this.mmkvListTreeElement.setLeadingIcons([mmkvIcon]);
+
+    storageTreeElement.appendChild(this.mmkvListTreeElement);
 
     this.extensionStorageListTreeElement = new ExpandableApplicationPanelTreeElement(
         panel, i18nString(UIStrings.extensionStorage), i18nString(UIStrings.noExtensionStorage),
@@ -486,6 +509,7 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox implements SDK.Targe
     this.resourcesSection = new ResourcesSection(panel, resourcesTreeElement);
 
     this.domStorageTreeElements = new Map();
+    this.mmkvStorageTreeElements = new Map();
     this.extensionIdToStorageTreeParentElement = new Map();
     this.extensionStorageTreeElements = new Map();
     this.extensionStorageModels = [];
@@ -516,6 +540,13 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox implements SDK.Targe
         ExtensionStorageModel, {
           modelAdded: (model: ExtensionStorageModel) => this.extensionStorageModelAdded(model),
           modelRemoved: (model: ExtensionStorageModel) => this.extensionStorageModelRemoved(model),
+        },
+        {scoped: true});
+
+    SDK.TargetManager.TargetManager.instance().observeModels(
+        MMKVStorageModel, {
+          modelAdded: (model: MMKVStorageModel) => this.mmkvStorageModelAdded(model),
+          modelRemoved: (model: MMKVStorageModel) => this.mmkvStorageModelRemoved(model),
         },
         {scoped: true});
 
@@ -837,6 +868,63 @@ export class ApplicationPanelSidebar extends UI.Widget.VBox implements SDK.Targe
       }
     }
     this.domStorageTreeElements.delete(domStorage);
+  }
+
+  private mmkvStorageModelAdded(model: MMKVStorageModel): void {
+    model.addEventListener(MMKVStorageModelEvents.MMKV_STORAGE_ADDED, this.mmkvStorageAdded, this);
+    model.addEventListener(MMKVStorageModelEvents.MMKV_STORAGE_REMOVED, this.mmkvStorageRemoved, this);
+    model.enable();
+    for (const storage of model.storages()) {
+      this.addMMKVStorage(storage);
+    }
+  }
+
+  private mmkvStorageModelRemoved(model: MMKVStorageModel): void {
+    model.removeEventListener(MMKVStorageModelEvents.MMKV_STORAGE_ADDED, this.mmkvStorageAdded, this);
+    model.removeEventListener(MMKVStorageModelEvents.MMKV_STORAGE_REMOVED, this.mmkvStorageRemoved, this);
+    for (const storage of model.storages()) {
+      this.removeMMKVStorage(storage);
+    }
+  }
+
+  private mmkvStorageAdded(event: Common.EventTarget.EventTargetEvent<MMKVStorage>): void {
+    const mmkvStorage = event.data;
+    this.addMMKVStorage(mmkvStorage);
+  }
+
+  private addMMKVStorage(mmkvStorage: MMKVStorage): void {
+    console.assert(!this.mmkvStorageTreeElements.get(mmkvStorage));
+
+    const mmkvStorageTreeElement = new MMKVStorageTreeElement(this.panel, mmkvStorage);
+    this.mmkvStorageTreeElements.set(mmkvStorage, mmkvStorageTreeElement);
+    this.mmkvListTreeElement.appendChild(mmkvStorageTreeElement, comparator);
+
+    function comparator(a: UI.TreeOutline.TreeElement, b: UI.TreeOutline.TreeElement): number {
+      const aTitle = a.titleAsText().toLocaleLowerCase();
+      const bTitle = b.titleAsText().toLocaleLowerCase();
+      return aTitle.localeCompare(bTitle);
+    }
+  }
+
+  private mmkvStorageRemoved(event: Common.EventTarget.EventTargetEvent<MMKVStorage>): void {
+    const mmkvStorage = event.data;
+    this.removeMMKVStorage(mmkvStorage);
+  }
+
+  private removeMMKVStorage(mmkvStorage: MMKVStorage): void {
+    const treeElement = this.mmkvStorageTreeElements.get(mmkvStorage);
+    if (!treeElement) {
+      return;
+    }
+    const wasSelected = treeElement.selected;
+    const parentListTreeElement = treeElement.parent;
+    if (parentListTreeElement) {
+      parentListTreeElement.removeChild(treeElement);
+      if (wasSelected) {
+        parentListTreeElement.select();
+      }
+    }
+    this.mmkvStorageTreeElements.delete(mmkvStorage);
   }
 
   private extensionStorageAdded(event: Common.EventTarget.EventTargetEvent<ExtensionStorage>): void {
@@ -1734,6 +1822,42 @@ export class DOMStorageTreeElement extends ApplicationPanelTreeElement {
     const contextMenu = new UI.ContextMenu.ContextMenu(event);
     contextMenu.defaultSection().appendItem(
         i18nString(UIStrings.clear), () => this.domStorage.clear(), {jslogContext: 'clear'});
+    void contextMenu.show();
+  }
+}
+
+export class MMKVStorageTreeElement extends ApplicationPanelTreeElement {
+  private readonly mmkvStorage: MMKVStorage;
+  constructor(storagePanel: ResourcesPanel, mmkvStorage: MMKVStorage) {
+    super(
+        storagePanel,
+        mmkvStorage.instanceId === 'default' ? 'MMKV (default)' : `MMKV (${mmkvStorage.instanceId})`,
+        false, 'mmkv-storage-for-instance');
+    this.mmkvStorage = mmkvStorage;
+    const icon = createIcon('table');
+    this.setLeadingIcons([icon]);
+  }
+
+  override get itemURL(): Platform.DevToolsPath.UrlString {
+    return 'mmkv-storage://' + this.mmkvStorage.instanceId as Platform.DevToolsPath.UrlString;
+  }
+
+  override onselect(selectedByUser?: boolean): boolean {
+    super.onselect(selectedByUser);
+    Host.userMetrics.panelShown('mmkv-storage');
+    this.resourcesPanel.showMMKVStorage(this.mmkvStorage);
+    return false;
+  }
+
+  override onattach(): void {
+    super.onattach();
+    this.listItemElement.addEventListener('contextmenu', this.handleContextMenuEvent.bind(this), true);
+  }
+
+  private handleContextMenuEvent(event: MouseEvent): void {
+    const contextMenu = new UI.ContextMenu.ContextMenu(event);
+    contextMenu.defaultSection().appendItem(
+        i18nString(UIStrings.clear), () => this.mmkvStorage.clear(), {jslogContext: 'clear'});
     void contextMenu.show();
   }
 }
