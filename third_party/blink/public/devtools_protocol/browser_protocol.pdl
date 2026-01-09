@@ -39,6 +39,7 @@ include domains/LayerTree.pdl
 include domains/Log.pdl
 include domains/Media.pdl
 include domains/Memory.pdl
+include domains/MMKVStorage.pdl
 include domains/Network.pdl
 include domains/Overlay.pdl
 include domains/PWA.pdl

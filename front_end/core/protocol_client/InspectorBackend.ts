@@ -431,6 +431,10 @@ export class TargetBase {
     return this.getAgent('Memory');
   }
 
+  mmkvStorageAgent(): ProtocolProxyApi.MMKVStorageApi {
+    return this.getAgent('MMKVStorage');
+  }
+
   networkAgent(): ProtocolProxyApi.NetworkApi {
     return this.getAgent('Network');
   }
@@ -585,6 +589,10 @@ export class TargetBase {
 
   registerMediaDispatcher(dispatcher: ProtocolProxyApi.MediaDispatcher): void {
     this.registerDispatcher('Media', dispatcher);
+  }
+
+  registerMMKVStorageDispatcher(dispatcher: ProtocolProxyApi.MMKVStorageDispatcher): void {
+    this.registerDispatcher('MMKVStorage', dispatcher);
   }
 
   registerNetworkDispatcher(dispatcher: ProtocolProxyApi.NetworkDispatcher): void {

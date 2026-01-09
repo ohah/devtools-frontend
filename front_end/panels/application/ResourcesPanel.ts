@@ -17,8 +17,6 @@ import {DOMStorageItemsView} from './DOMStorageItemsView.js';
 import type {DOMStorage} from './DOMStorageModel.js';
 import {ExtensionStorageItemsView} from './ExtensionStorageItemsView.js';
 import type {ExtensionStorage} from './ExtensionStorageModel.js';
-import {MMKVStorageItemsView} from './MMKVStorageItemsView.js';
-import type {MMKVStorage} from './MMKVStorageModel.js';
 import type * as PreloadingHelper from './preloading/helper/helper.js';
 import resourcesPanelStyles from './resourcesPanel.css.js';
 import {StorageItemsToolbar} from './StorageItemsToolbar.js';
@@ -34,7 +32,6 @@ export class ResourcesPanel extends UI.Panel.PanelWithSidebar {
   private readonly storageViewToolbar: UI.Toolbar.Toolbar;
   private domStorageView: DOMStorageItemsView|null;
   private extensionStorageView: ExtensionStorageItemsView|null;
-  private mmkvStorageView: MMKVStorageItemsView|null;
   private cookieView: CookieItemsView|null;
   private readonly sidebar: ApplicationPanelSidebar;
 
@@ -59,7 +56,6 @@ export class ResourcesPanel extends UI.Panel.PanelWithSidebar {
 
     this.domStorageView = null;
     this.extensionStorageView = null;
-    this.mmkvStorageView = null;
 
     this.cookieView = null;
 
@@ -184,19 +180,6 @@ export class ResourcesPanel extends UI.Panel.PanelWithSidebar {
       this.extensionStorageView.setStorage(extensionStorage);
     }
     this.showView(this.extensionStorageView);
-  }
-
-  showMMKVStorage(mmkvStorage: MMKVStorage): void {
-    if (!mmkvStorage) {
-      return;
-    }
-
-    if (!this.mmkvStorageView) {
-      this.mmkvStorageView = new MMKVStorageItemsView(mmkvStorage);
-    } else {
-      this.mmkvStorageView.setStorage(mmkvStorage);
-    }
-    this.showView(this.mmkvStorageView);
   }
 
   showCookies(cookieFrameTarget: SDK.Target.Target, cookieDomain: string): void {

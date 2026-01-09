@@ -15005,6 +15005,155 @@
             ]
         },
         {
+            "domain": "MMKVStorage",
+            "description": "Query and modify MMKV storage.",
+            "experimental": true,
+            "types": [
+                {
+                    "id": "Item",
+                    "description": "MMKV Storage item (key-value pair).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "commands": [
+                {
+                    "name": "enable",
+                    "description": "Enables storage tracking, storage events will now be delivered to the client."
+                },
+                {
+                    "name": "getMMKVItems",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ],
+                    "returns": [
+                        {
+                            "name": "entries",
+                            "type": "array",
+                            "items": {
+                                "$ref": "Item"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "setMMKVItem",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        },
+                        {
+                            "name": "value",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "removeMMKVItem",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "clear",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ]
+                }
+            ],
+            "events": [
+                {
+                    "name": "mmkvItemsCleared",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "mmkvItemRemoved",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "mmkvItemAdded",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        },
+                        {
+                            "name": "newValue",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "mmkvItemUpdated",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        },
+                        {
+                            "name": "oldValue",
+                            "type": "string"
+                        },
+                        {
+                            "name": "newValue",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "mmkvInstanceCreated",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "domain": "Network",
             "description": "Network domain allows tracking network activities of the page. It exposes information about http,\nfile, data and other requests and responses, their headers, bodies, timing, etc.",
             "dependencies": [

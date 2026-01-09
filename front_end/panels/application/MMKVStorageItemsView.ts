@@ -61,6 +61,10 @@ export class MMKVStorageItemsView extends KeyValueStorageItemsView {
   private mmkvStorage: MMKVStorage;
   private eventListeners: Common.EventTarget.EventDescriptor[];
 
+  get storage(): MMKVStorage {
+    return this.mmkvStorage;
+  }
+
   constructor(mmkvStorage: MMKVStorage) {
     super(i18nString(UIStrings.mmkvStorageItems), 'mmkv-storage', true);
 
@@ -112,7 +116,7 @@ export class MMKVStorageItemsView extends KeyValueStorageItemsView {
     UI.ARIAUtils.LiveAnnouncer.alert(i18nString(UIStrings.mmkvStorageItemsCleared));
   }
 
-  private mmkvStorageItemRemoved(event: Common.EventTarget.EventTargetEvent<MMKVStorage.MMKVItemRemovedEvent>):
+  private mmkvStorageItemRemoved(event: Common.EventTarget.EventTargetEvent<MMKVStorage.MmkvItemRemovedEvent>):
       void {
     if (!this.isShowing()) {
       return;
@@ -126,7 +130,7 @@ export class MMKVStorageItemsView extends KeyValueStorageItemsView {
     UI.ARIAUtils.LiveAnnouncer.alert(i18nString(UIStrings.mmkvStorageItemDeleted));
   }
 
-  private mmkvStorageItemAdded(event: Common.EventTarget.EventTargetEvent<MMKVStorage.MMKVItemAddedEvent>): void {
+  private mmkvStorageItemAdded(event: Common.EventTarget.EventTargetEvent<MMKVStorage.MmkvItemAddedEvent>): void {
     if (!this.isShowing()) {
       return;
     }
@@ -134,7 +138,7 @@ export class MMKVStorageItemsView extends KeyValueStorageItemsView {
     this.itemAdded(event.data.key, event.data.value);
   }
 
-  private mmkvStorageItemUpdated(event: Common.EventTarget.EventTargetEvent<MMKVStorage.MMKVItemUpdatedEvent>):
+  private mmkvStorageItemUpdated(event: Common.EventTarget.EventTargetEvent<MMKVStorage.MmkvItemUpdatedEvent>):
       void {
     if (!this.isShowing()) {
       return;

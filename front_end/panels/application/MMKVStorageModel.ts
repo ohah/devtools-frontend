@@ -51,7 +51,7 @@ export class MMKVStorage extends Common.ObjectWrapper.ObjectWrapper<MMKVStorage.
   }
 
   getItems(): Promise<Protocol.MMKVStorage.Item[]|null> {
-    return this.model.agent.invoke_getMMKVItems({instanceId: this.instanceId}).then(({entries}) => entries);
+    return this.model.agent.invoke_getMMKVItems({instanceId: this.instanceId}).then(({entries}: {entries: Protocol.MMKVStorage.Item[]|null}) => entries);
   }
 
   setItem(key: string, value: string): void {
@@ -75,16 +75,16 @@ export namespace MMKVStorage {
     MMKV_ITEM_UPDATED = 'MMKVItemUpdated',
   }
 
-  export interface MMKVItemRemovedEvent {
+  export interface MmkvItemRemovedEvent {
     key: string;
   }
 
-  export interface MMKVItemAddedEvent {
+  export interface MmkvItemAddedEvent {
     key: string;
     value: string;
   }
 
-  export interface MMKVItemUpdatedEvent {
+  export interface MmkvItemUpdatedEvent {
     key: string;
     oldValue: string;
     value: string;
@@ -92,9 +92,9 @@ export namespace MMKVStorage {
 
   export interface EventTypes {
     [Events.MMKV_ITEMS_CLEARED]: void;
-    [Events.MMKV_ITEM_REMOVED]: MMKVItemRemovedEvent;
-    [Events.MMKV_ITEM_ADDED]: MMKVItemAddedEvent;
-    [Events.MMKV_ITEM_UPDATED]: MMKVItemUpdatedEvent;
+    [Events.MMKV_ITEM_REMOVED]: MmkvItemRemovedEvent;
+    [Events.MMKV_ITEM_ADDED]: MmkvItemAddedEvent;
+    [Events.MMKV_ITEM_UPDATED]: MmkvItemUpdatedEvent;
   }
 }
 
@@ -107,9 +107,7 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     super(target);
 
     this.#storages = new Map();
-    // Note: mmkvStorageAgent() needs to be added to Target class / 참고: mmkvStorageAgent()는 Target 클래스에 추가되어야 합니다
-    // For now, use a type assertion / 지금은 타입 단언 사용
-    this.agent = (target as any).mmkvStorageAgent() as ProtocolProxyApi.MMKVStorageApi;
+    this.agent = target.mmkvStorageAgent();
   }
 
   enable(): void {
@@ -117,15 +115,13 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
       return;
     }
 
-    // Note: registerMMKVStorageDispatcher needs to be added to Target/InspectorBackend / 참고: registerMMKVStorageDispatcher는 Target/InspectorBackend에 추가되어야 합니다
-    // For now, use a type assertion / 지금은 타입 단언 사용
-    (this.target() as any).registerMMKVStorageDispatcher(new MMKVStorageDispatcher(this));
+    this.target().registerMMKVStorageDispatcher(new MMKVStorageDispatcher(this));
     void this.agent.invoke_enable();
 
     this.enabled = true;
   }
 
-  mmkvItemsCleared({instanceId}: Protocol.MMKVStorage.MMKVItemsClearedEvent): void {
+  mmkvItemsCleared({instanceId}: Protocol.MMKVStorage.MmkvItemsClearedEvent): void {
     const mmkvStorage = this.storageForInstanceId(instanceId);
     if (!mmkvStorage) {
       return;
@@ -134,7 +130,7 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEMS_CLEARED);
   }
 
-  mmkvItemRemoved({instanceId, key}: Protocol.MMKVStorage.MMKVItemRemovedEvent): void {
+  mmkvItemRemoved({instanceId, key}: Protocol.MMKVStorage.MmkvItemRemovedEvent): void {
     const mmkvStorage = this.storageForInstanceId(instanceId);
     if (!mmkvStorage) {
       return;
@@ -144,8 +140,8 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEM_REMOVED, eventData);
   }
 
-  mmkvItemAdded({instanceId, key, newValue}: Protocol.MMKVStorage.MMKVItemAddedEvent): void {
-    const mmkvStorage = this.storageForInstanceId(instanceId);
+  mmkvItemAdded({instanceId, key, newValue}: Protocol.MMKVStorage.MmkvItemAddedEvent): void {
+    let mmkvStorage = this.storageForInstanceId(instanceId);
     if (!mmkvStorage) {
       // Create storage if it doesn't exist / 존재하지 않으면 스토리지 생성
       mmkvStorage = this.addStorage(instanceId);
@@ -155,7 +151,7 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEM_ADDED, eventData);
   }
 
-  mmkvItemUpdated({instanceId, key, oldValue, newValue}: Protocol.MMKVStorage.MMKVItemUpdatedEvent): void {
+  mmkvItemUpdated({instanceId, key, oldValue, newValue}: Protocol.MMKVStorage.MmkvItemUpdatedEvent): void {
     const mmkvStorage = this.storageForInstanceId(instanceId);
     if (!mmkvStorage) {
       return;
@@ -165,14 +161,15 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEM_UPDATED, eventData);
   }
 
-  mmkvInstanceCreated({instanceId}: Protocol.MMKVStorage.MMKVInstanceCreatedEvent): void {
+  mmkvInstanceCreated({instanceId}: Protocol.MMKVStorage.MmkvInstanceCreatedEvent): void {
     // Create storage for new instance / 새 인스턴스에 대한 스토리지 생성
     this.addStorage(instanceId);
   }
 
   private addStorage(instanceId: string): MMKVStorage {
-    if (this.#storages.has(instanceId)) {
-      return this.#storages.get(instanceId)!;
+    const existing = this.#storages.get(instanceId);
+    if (existing) {
+      return existing;
     }
 
     const storage = new MMKVStorage(this, instanceId);
@@ -190,7 +187,7 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
   }
 }
 
-SDK.SDKModel.SDKModel.register(MMKVStorageModel, {capabilities: SDK.Target.Capability.None, autostart: false});
+SDK.SDKModel.SDKModel.register(MMKVStorageModel, {capabilities: SDK.Target.Capability.NONE, autostart: false});
 
 export const enum Events {
   MMKV_STORAGE_ADDED = 'MMKVStorageAdded',
@@ -208,23 +205,23 @@ export class MMKVStorageDispatcher implements ProtocolProxyApi.MMKVStorageDispat
     this.model = model;
   }
 
-  mmkvItemsCleared({instanceId}: Protocol.MMKVStorage.MMKVItemsClearedEvent): void {
+  mmkvItemsCleared({instanceId}: Protocol.MMKVStorage.MmkvItemsClearedEvent): void {
     this.model.mmkvItemsCleared({instanceId});
   }
 
-  mmkvItemRemoved({instanceId, key}: Protocol.MMKVStorage.MMKVItemRemovedEvent): void {
+  mmkvItemRemoved({instanceId, key}: Protocol.MMKVStorage.MmkvItemRemovedEvent): void {
     this.model.mmkvItemRemoved({instanceId, key});
   }
 
-  mmkvItemAdded({instanceId, key, newValue}: Protocol.MMKVStorage.MMKVItemAddedEvent): void {
+  mmkvItemAdded({instanceId, key, newValue}: Protocol.MMKVStorage.MmkvItemAddedEvent): void {
     this.model.mmkvItemAdded({instanceId, key, newValue});
   }
 
-  mmkvItemUpdated({instanceId, key, oldValue, newValue}: Protocol.MMKVStorage.MMKVItemUpdatedEvent): void {
+  mmkvItemUpdated({instanceId, key, oldValue, newValue}: Protocol.MMKVStorage.MmkvItemUpdatedEvent): void {
     this.model.mmkvItemUpdated({instanceId, key, oldValue, newValue});
   }
 
-  mmkvInstanceCreated({instanceId}: Protocol.MMKVStorage.MMKVInstanceCreatedEvent): void {
+  mmkvInstanceCreated({instanceId}: Protocol.MMKVStorage.MmkvInstanceCreatedEvent): void {
     this.model.mmkvInstanceCreated({instanceId});
   }
 }

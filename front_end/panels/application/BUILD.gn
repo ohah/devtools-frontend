@@ -52,6 +52,8 @@ devtools_ui_module("application") {
     "InterestGroupStorageView.ts",
     "InterestGroupTreeElement.ts",
     "KeyValueStorageItemsView.ts",
+    "MMKVStorageItemsView.ts",
+    "MMKVStorageModel.ts",
     "OpenedWindowDetailsView.ts",
     "OriginTrialTreeView.ts",
     "PreloadingTreeElement.ts",
@@ -123,6 +125,7 @@ devtools_entrypoint("bundle") {
   visibility = [
     ":*",
     "../../entrypoints/*",
+    "../../panels/storage:*",
   ]
 
   visibility += devtools_panels_visibility
