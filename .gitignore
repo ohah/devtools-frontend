@@ -67,3 +67,11 @@ test/perf/.generated
 
 # cipd rollup binaries synced from third_party/
 node_modules/@rollup/rollup*/
+
+# Plugin build outputs / 플러그인 빌드 결과물
+/front_end/panels/plugins/*/plugin.js
+/front_end/panels/plugins/*/index.html
+/front_end/panels/plugins/*/ui/
+/front_end/panels/plugins/*/*.js
+/front_end/panels/plugins/*/*.d.ts
+/front_end/panels/plugins/*/chunk-*.js
