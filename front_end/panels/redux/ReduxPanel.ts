@@ -2,11 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import * as UI from '../../ui/legacy/legacy.js';
-import * as Platform from '../../core/platform/platform.js';
-import * as SDK from '../../core/sdk/sdk.js';
+import type * as Platform from '../../core/platform/platform.js';
 import * as Root from '../../core/root/root.js';
+import * as SDK from '../../core/sdk/sdk.js';
+import * as UI from '../../ui/legacy/legacy.js';
+
 import { getReduxExtensionBridge, initializeReduxBridge, type ReduxExtensionBridge } from './ReduxExtensionBridge.js';
+
+export const DEFAULT_VIEW = (input, _output, target) => {
+  render(html`
+    <div>
+      <iframe class="redux-devtools-iframe" src=${reduxDevToolsPage}
+          style="width:100%; height:100%; border:none"></iframe>
+    </div>`,
+    target);
+};
 
 export class ReduxPanel extends UI.Panel.Panel {
   #iframe: HTMLIFrameElement | null = null;
@@ -24,10 +34,6 @@ export class ReduxPanel extends UI.Panel.Panel {
 
     // Create iframe directly / iframe 직접 생성
     this.#iframe = document.createElement('iframe');
-    this.#iframe.className = 'redux-devtools-iframe';
-    this.#iframe.style.width = '100%';
-    this.#iframe.style.height = '100%';
-    this.#iframe.style.border = 'none';
 
     // Build URL for plugin HTML / 플러그인 HTML URL 구성
     // Use the same base URL as the current page / 현재 페이지와 동일한 base URL 사용
@@ -42,16 +48,18 @@ export class ReduxPanel extends UI.Panel.Panel {
       const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
       reduxDevToolsPage = `${basePath}/panels/plugins/redux-plugin/index.html` as Platform.DevToolsPath.UrlString;
     }
-    this.#iframe.src = reduxDevToolsPage;
 
     this.#iframe.onload = () => {
       if (this.#iframe?.contentWindow) {
-        // Initialize iframe window - this will flush buffered messages / iframe window 초기화 - 버퍼된 메시지가 전송됨
-        this.#bridge.initialize(this.#iframe.contentWindow);
+        // Wait a bit for iframe content to fully load / iframe 콘텐츠가 완전히 로드될 때까지 약간 대기
+        setTimeout(() => {
+          if (this.#iframe?.contentWindow) {
+            // Initialize iframe window - this will flush buffered messages / iframe window 초기화 - 버퍼된 메시지가 전송됨
+            this.#bridge.initialize(this.#iframe.contentWindow);
+          }
+        }, 100);
       }
     };
-
-    this.contentElement.appendChild(this.#iframe);
   }
 
   override wasShown(): void {
@@ -79,5 +87,4 @@ export class ReduxPanel extends UI.Panel.Panel {
     // Don't cleanup - bridge is global and keeps listening / 정리하지 않음 - bridge는 전역이고 계속 리스닝
   }
 }
-
 
