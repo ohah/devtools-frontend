@@ -51,6 +51,8 @@ export class MMKVStorage extends Common.ObjectWrapper.ObjectWrapper<MMKVStorage.
   }
 
   getItems(): Promise<Protocol.MMKVStorage.Item[]|null> {
+    // Use CDP command - client will handle via registered handler / CDP 명령 사용 - 클라이언트가 등록된 핸들러를 통해 처리
+    // Handler routes based on method name / 핸들러가 메서드 이름을 기준으로 라우팅
     return this.model.agent.invoke_getMMKVItems({instanceId: this.instanceId}).then(({entries}: {entries: Protocol.MMKVStorage.Item[]|null}) => entries);
   }
 

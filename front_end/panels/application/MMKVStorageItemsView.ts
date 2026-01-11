@@ -37,8 +37,9 @@ import * as SourceFrame from '../../ui/legacy/components/source_frame/source_fra
 import * as UI from '../../ui/legacy/legacy.js';
 import * as VisualLogging from '../../ui/visual_logging/visual_logging.js';
 
-import {MMKVStorage} from './MMKVStorageModel.js';
+import * as ApplicationComponents from './components/components.js';
 import {KeyValueStorageItemsView} from './KeyValueStorageItemsView.js';
+import {MMKVStorage} from './MMKVStorageModel.js';
 
 const UIStrings = {
   /**
@@ -66,7 +67,12 @@ export class MMKVStorageItemsView extends KeyValueStorageItemsView {
   }
 
   constructor(mmkvStorage: MMKVStorage) {
-    super(i18nString(UIStrings.mmkvStorageItems), 'mmkv-storage', true);
+    // Create custom metadata view that shows only instanceId / instanceId만 표시하는 커스텀 metadata view 생성
+    const metadataView = new ApplicationComponents.StorageMetadataView.StorageMetadataView();
+    // Override getTitle to return only instanceId / getTitle을 오버라이드하여 instanceId만 반환
+    metadataView.getTitle = () => mmkvStorage.instanceId;
+
+    super(i18nString(UIStrings.mmkvStorageItems), 'mmkv-storage', true, undefined, metadataView);
 
     this.mmkvStorage = mmkvStorage;
     this.element.classList.add('storage-view', 'table');
