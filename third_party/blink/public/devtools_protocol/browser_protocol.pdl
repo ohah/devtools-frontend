@@ -10,6 +10,7 @@ version
 
 include domains/Accessibility.pdl
 include domains/Animation.pdl
+include domains/AsyncStorageStorage.pdl
 include domains/Audits.pdl
 include domains/Autofill.pdl
 include domains/BackgroundService.pdl

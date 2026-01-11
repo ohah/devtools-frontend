@@ -1000,6 +1000,155 @@
             ]
         },
         {
+            "domain": "AsyncStorageStorage",
+            "description": "Query and modify AsyncStorage storage.",
+            "experimental": true,
+            "types": [
+                {
+                    "id": "Item",
+                    "description": "AsyncStorage Storage item (key-value pair).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "commands": [
+                {
+                    "name": "enable",
+                    "description": "Enables storage tracking, storage events will now be delivered to the client."
+                },
+                {
+                    "name": "getAsyncStorageItems",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ],
+                    "returns": [
+                        {
+                            "name": "entries",
+                            "type": "array",
+                            "items": {
+                                "$ref": "Item"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "setAsyncStorageItem",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        },
+                        {
+                            "name": "value",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "removeAsyncStorageItem",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "clear",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ]
+                }
+            ],
+            "events": [
+                {
+                    "name": "asyncStorageItemsCleared",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "asyncStorageItemRemoved",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "asyncStorageItemAdded",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        },
+                        {
+                            "name": "newValue",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "asyncStorageItemUpdated",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        },
+                        {
+                            "name": "key",
+                            "type": "string"
+                        },
+                        {
+                            "name": "oldValue",
+                            "type": "string"
+                        },
+                        {
+                            "name": "newValue",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "asyncStorageInstanceCreated",
+                    "parameters": [
+                        {
+                            "name": "instanceId",
+                            "type": "string"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "domain": "Audits",
             "description": "Audits domain allows investigation of page violations and possible improvements.",
             "experimental": true,

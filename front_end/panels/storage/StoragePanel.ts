@@ -9,6 +9,8 @@ import * as SDK from '../../core/sdk/sdk.js';
 import {createIcon} from '../../ui/kit/kit.js';
 import * as UI from '../../ui/legacy/legacy.js';
 import * as VisualLogging from '../../ui/visual_logging/visual_logging.js';
+import {AsyncStorageStorageItemsView} from '../application/AsyncStorageStorageItemsView.js';
+import {AsyncStorageStorageModel, type AsyncStorageStorage, Events as AsyncStorageStorageModelEvents} from '../application/AsyncStorageStorageModel.js';
 import {MMKVStorageItemsView} from '../application/MMKVStorageItemsView.js';
 import {MMKVStorageModel, type MMKVStorage, Events as MMKVStorageModelEvents} from '../application/MMKVStorageModel.js';
 
@@ -20,6 +22,7 @@ export class StoragePanel extends UI.Panel.PanelWithSidebar {
   storageViews: HTMLElement;
   private readonly storageViewToolbar: UI.Toolbar.Toolbar;
   private mmkvStorageView: MMKVStorageItemsView|null;
+  private asyncStorageStorageView: AsyncStorageStorageItemsView|null;
   private readonly sidebar: StoragePanelSidebar;
 
   private constructor() {
@@ -35,6 +38,7 @@ export class StoragePanel extends UI.Panel.PanelWithSidebar {
     this.splitWidget().setMainWidget(mainContainer);
 
     this.mmkvStorageView = null;
+    this.asyncStorageStorageView = null;
 
     this.sidebar = new StoragePanelSidebar(this);
     this.sidebar.show(this.panelSidebarElement());
@@ -109,6 +113,19 @@ export class StoragePanel extends UI.Panel.PanelWithSidebar {
     this.showView(this.mmkvStorageView);
   }
 
+  showAsyncStorageStorage(asyncStorageStorage: AsyncStorageStorage): void {
+    if (!asyncStorageStorage) {
+      return;
+    }
+
+    if (!this.asyncStorageStorageView) {
+      this.asyncStorageStorageView = new AsyncStorageStorageItemsView(asyncStorageStorage);
+    } else {
+      this.asyncStorageStorageView.setStorage(asyncStorageStorage);
+    }
+    this.showView(this.asyncStorageStorageView);
+  }
+
   showCategoryView(
       categoryName: string, categoryHeadline: string, categoryDescription: string,
       _categoryLink: Platform.DevToolsPath.UrlString|null): void {
@@ -130,6 +147,7 @@ export class StoragePanelSidebar extends UI.Widget.VBox {
   mmkvListTreeElement: ExpandableStoragePanelTreeElement;
   asyncStorageListTreeElement: ExpandableStoragePanelTreeElement;
   private mmkvStorageTreeElements: Map<MMKVStorage, MMKVStorageTreeElement>;
+  private asyncStorageStorageTreeElements: Map<AsyncStorageStorage, AsyncStorageStorageTreeElement>;
 
   constructor(panel: StoragePanel) {
     super();
@@ -141,6 +159,7 @@ export class StoragePanelSidebar extends UI.Widget.VBox {
     this.element.appendChild(this.sidebarTree.element);
 
     this.mmkvStorageTreeElements = new Map();
+    this.asyncStorageStorageTreeElements = new Map();
 
     // Create MMKV section / MMKV 섹션 생성
     this.mmkvListTreeElement = new ExpandableStoragePanelTreeElement(
@@ -163,6 +182,12 @@ export class StoragePanelSidebar extends UI.Widget.VBox {
         MMKVStorageModel, {
           modelAdded: (model: MMKVStorageModel) => this.mmkvStorageModelAdded(model),
           modelRemoved: (model: MMKVStorageModel) => this.mmkvStorageModelRemoved(model),
+        },
+        {scoped: true});
+    SDK.TargetManager.TargetManager.instance().observeModels(
+        AsyncStorageStorageModel, {
+          modelAdded: (model: AsyncStorageStorageModel) => this.asyncStorageStorageModelAdded(model),
+          modelRemoved: (model: AsyncStorageStorageModel) => this.asyncStorageStorageModelRemoved(model),
         },
         {scoped: true});
   }
@@ -227,6 +252,96 @@ export class StoragePanelSidebar extends UI.Widget.VBox {
       const firstChild = this.mmkvListTreeElement.childAt(0);
       if (firstChild) {
         firstChild.select();
+      }
+    }
+  }
+
+  private asyncStorageStorageModelAdded(model: AsyncStorageStorageModel): void {
+    model.addEventListener(AsyncStorageStorageModelEvents.ASYNC_STORAGE_ADDED, this.asyncStorageStorageAdded, this);
+    model.addEventListener(AsyncStorageStorageModelEvents.ASYNC_STORAGE_REMOVED, this.asyncStorageStorageRemoved, this);
+    model.enable();
+    for (const storage of model.storages()) {
+      this.addAsyncStorageStorage(storage);
+    }
+  }
+
+  private asyncStorageStorageModelRemoved(model: AsyncStorageStorageModel): void {
+    model.removeEventListener(AsyncStorageStorageModelEvents.ASYNC_STORAGE_ADDED, this.asyncStorageStorageAdded, this);
+    model.removeEventListener(AsyncStorageStorageModelEvents.ASYNC_STORAGE_REMOVED, this.asyncStorageStorageRemoved, this);
+    for (const storage of model.storages()) {
+      this.removeAsyncStorageStorage(storage);
+    }
+  }
+
+  private asyncStorageStorageAdded = (event: Common.EventTarget.EventTargetEvent<AsyncStorageStorage>): void => {
+    const asyncStorageStorage = event.data;
+    this.addAsyncStorageStorage(asyncStorageStorage);
+  };
+
+  private addAsyncStorageStorage(asyncStorageStorage: AsyncStorageStorage): void {
+    // Check if already added / 이미 추가되었는지 확인
+    if (this.asyncStorageStorageTreeElements.has(asyncStorageStorage)) {
+      return;
+    }
+
+    // AsyncStorage is single instance, so show directly without expandable category / AsyncStorage는 단일 인스턴스이므로 확장 가능한 카테고리 없이 직접 표시
+    // If this is the first AsyncStorage, replace the expandable element with direct tree element / 첫 번째 AsyncStorage인 경우 확장 가능한 엘리먼트를 직접 트리 엘리먼트로 교체
+    if (this.asyncStorageStorageTreeElements.size === 0) {
+      // Remove the expandable element / 확장 가능한 엘리먼트 제거
+      this.sidebarTree.removeChild(this.asyncStorageListTreeElement);
+
+      // Create direct tree element / 직접 트리 엘리먼트 생성
+      const asyncStorageStorageTreeElement = new AsyncStorageStorageTreeElement(this.panel, asyncStorageStorage);
+      this.asyncStorageStorageTreeElements.set(asyncStorageStorage, asyncStorageStorageTreeElement);
+      this.sidebarTree.appendChild(asyncStorageStorageTreeElement);
+
+      // Auto-select the first AsyncStorage / 첫 번째 AsyncStorage 자동 선택
+      asyncStorageStorageTreeElement.select();
+    } else {
+      // If multiple AsyncStorage instances exist, use expandable category / 여러 AsyncStorage 인스턴스가 있는 경우 확장 가능한 카테고리 사용
+      const asyncStorageStorageTreeElement = new AsyncStorageStorageTreeElement(this.panel, asyncStorageStorage);
+      this.asyncStorageStorageTreeElements.set(asyncStorageStorage, asyncStorageStorageTreeElement);
+      this.asyncStorageListTreeElement.appendChild(asyncStorageStorageTreeElement, comparator);
+
+      function comparator(a: UI.TreeOutline.TreeElement, b: UI.TreeOutline.TreeElement): number {
+        const aTitle = a.titleAsText().toLocaleLowerCase();
+        const bTitle = b.titleAsText().toLocaleLowerCase();
+        return aTitle.localeCompare(bTitle);
+      }
+    }
+  }
+
+  private asyncStorageStorageRemoved = (event: Common.EventTarget.EventTargetEvent<AsyncStorageStorage>): void => {
+    const asyncStorageStorage = event.data;
+    this.removeAsyncStorageStorage(asyncStorageStorage);
+  };
+
+  private removeAsyncStorageStorage(asyncStorageStorage: AsyncStorageStorage): void {
+    const treeElement = this.asyncStorageStorageTreeElements.get(asyncStorageStorage);
+    if (!treeElement) {
+      return;
+    }
+    const wasSelected = treeElement.selected;
+
+    // Check if we're using direct tree element or expandable category / 직접 트리 엘리먼트를 사용하는지 확장 가능한 카테고리를 사용하는지 확인
+    if (this.asyncStorageStorageTreeElements.size === 1) {
+      // Last one, remove direct element and restore expandable category / 마지막 하나, 직접 엘리먼트 제거하고 확장 가능한 카테고리 복원
+      this.sidebarTree.removeChild(treeElement);
+      this.asyncStorageStorageTreeElements.delete(asyncStorageStorage);
+
+      // Restore expandable element / 확장 가능한 엘리먼트 복원
+      const asyncStorageIcon = createIcon('table');
+      this.asyncStorageListTreeElement.setLeadingIcons([asyncStorageIcon]);
+      this.sidebarTree.appendChild(this.asyncStorageListTreeElement);
+    } else {
+      // Multiple instances, remove from expandable category / 여러 인스턴스, 확장 가능한 카테고리에서 제거
+      this.asyncStorageListTreeElement.removeChild(treeElement);
+      this.asyncStorageStorageTreeElements.delete(asyncStorageStorage);
+      if (wasSelected && this.asyncStorageListTreeElement.childCount() > 0) {
+        const firstChild = this.asyncStorageListTreeElement.childAt(0);
+        if (firstChild) {
+          firstChild.select();
+        }
       }
     }
   }
@@ -341,6 +456,43 @@ class MMKVStorageTreeElement extends StoragePanelTreeElement {
     const contextMenu = new UI.ContextMenu.ContextMenu(event);
     contextMenu.defaultSection().appendItem(
         'Clear', () => this.mmkvStorage.clear(), {jslogContext: 'clear'});
+    void contextMenu.show();
+  }
+}
+
+// AsyncStorage Storage Tree Element / AsyncStorage 스토리지 트리 엘리먼트
+class AsyncStorageStorageTreeElement extends StoragePanelTreeElement {
+  private readonly asyncStorageStorage: AsyncStorageStorage;
+  constructor(storagePanel: StoragePanel, asyncStorageStorage: AsyncStorageStorage) {
+    super(
+        storagePanel,
+        'AsyncStorage',
+        false, 'async-storage-storage-for-instance');
+    this.asyncStorageStorage = asyncStorageStorage;
+    const icon = createIcon('table');
+    this.setLeadingIcons([icon]);
+    this.listItemElement.setAttribute('jslog', `${VisualLogging.treeItem('async-storage-storage-instance')}`);
+  }
+
+  override get itemURL(): Platform.DevToolsPath.UrlString {
+    return 'async-storage-storage://' + this.asyncStorageStorage.instanceId as Platform.DevToolsPath.UrlString;
+  }
+
+  override onselect(_selectedByUser?: boolean): boolean {
+    super.onselect(_selectedByUser);
+    this.storagePanel.showAsyncStorageStorage(this.asyncStorageStorage);
+    return false;
+  }
+
+  override onattach(): void {
+    super.onattach();
+    this.listItemElement.addEventListener('contextmenu', this.handleContextMenuEvent.bind(this), true);
+  }
+
+  private handleContextMenuEvent(event: MouseEvent): void {
+    const contextMenu = new UI.ContextMenu.ContextMenu(event);
+    contextMenu.defaultSection().appendItem(
+        'Clear', () => this.asyncStorageStorage.clear(), {jslogContext: 'clear'});
     void contextMenu.show();
   }
 }

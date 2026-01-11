@@ -36,6 +36,8 @@ devtools_ui_module("application") {
     "AppManifestView.ts",
     "ApplicationPanelSidebar.ts",
     "ApplicationPanelTreeElement.ts",
+    "AsyncStorageStorageItemsView.ts",
+    "AsyncStorageStorageModel.ts",
     "BackForwardCacheTreeElement.ts",
     "BackgroundServiceModel.ts",
     "BackgroundServiceView.ts",
