@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+/* eslint-disable @devtools/no-imperative-dom-api */
+
 import type * as Platform from '../../core/platform/platform.js';
 import * as Root from '../../core/root/root.js';
 import * as SDK from '../../core/sdk/sdk.js';
@@ -37,7 +39,8 @@ export class ReduxPanel extends UI.Panel.Panel {
     if (remoteBase) {
       // Use remote base if available / remote base가 있으면 사용
       reduxDevToolsPage = `${remoteBase.base}panels/plugins/redux-plugin/index.html` as Platform.DevToolsPath.UrlString;
-    } else {
+    }
+    else {
       // Fallback to relative path / 상대 경로로 폴백
       const currentPath = window.location.pathname;
       const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
