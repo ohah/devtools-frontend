@@ -76,6 +76,8 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
     SDK.TargetManager.SDKModelObserver<ReactDevToolsModel> {
   readonly #tab: string;
   #model: ReactDevToolsModel | null = null;
+  /** Wrapper for loader/error/DevTools UI so we never clear the <style> in contentElement / 로더·에러·DevTools UI용 래퍼, contentElement의 <style>은 절대 제거하지 않음 */
+  readonly #contentWrapper: HTMLDivElement;
 
   constructor(
     tab: 'components' | 'profiler',
@@ -83,6 +85,11 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
   ) {
     super({ title, viewId: (`react-devtools-${tab}` as Lowercase<string>) });
     this.registerRequiredCSS(ReactDevTools.CSS);
+    this.#contentWrapper = document.createElement('div');
+    this.#contentWrapper.style.display = 'flex';
+    this.#contentWrapper.style.flex = '1';
+    this.#contentWrapper.style.minHeight = '0';
+    this.contentElement.appendChild(this.#contentWrapper);
 
     this.#tab = tab;
     this.#renderLoader();
@@ -161,7 +168,7 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
     const usingDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initializeFn = this.#tab === 'components' ? ReactDevTools.initializeComponents : ReactDevTools.initializeProfiler;
 
-    initializeFn(this.contentElement, {
+    initializeFn(this.#contentWrapper, {
       bridge: model.getBridgeOrThrow(),
       store: model.getStoreOrThrow(),
       theme: usingDarkTheme ? 'dark' : 'light',
@@ -180,7 +187,7 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
     loader.classList.add('spinner');
 
     loaderContainer.appendChild(loader);
-    this.contentElement.appendChild(loaderContainer);
+    this.#contentWrapper.appendChild(loaderContainer);
   }
 
   #renderErrorView(errorMessage: string): void {
@@ -199,7 +206,7 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
 
     errorContainer.appendChild(errorIconView);
     errorContainer.appendChild(errorMessageParagraph);
-    this.contentElement.appendChild(errorContainer);
+    this.#contentWrapper.appendChild(errorContainer);
 
     const feedbackLink = (globalThis as unknown as { FB_ONLY__reactNativeFeedbackLink?: Platform.DevToolsPath.UrlString })
       .FB_ONLY__reactNativeFeedbackLink;
@@ -211,7 +218,8 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
     }
   }
 
+  /** Clear only the content wrapper so the <style> in contentElement is never removed / contentElement의 <style>은 유지하고 wrapper만 비움 */
   #clearView(): void {
-    this.contentElement.removeChildren();
+    this.#contentWrapper.removeChildren();
   }
 }

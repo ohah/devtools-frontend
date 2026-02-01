@@ -3038,6 +3038,7 @@ export const knownContextValues = new Set([
   'ratechange',
   'raw-headers',
   'raw-headers-show-more',
+  'react-devtools-profiler',
   'read-only',
   'read-write',
   'readiness-list-link',
