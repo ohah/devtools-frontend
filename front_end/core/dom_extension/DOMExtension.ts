@@ -133,7 +133,19 @@ Node.prototype.getComponentSelection = function(): Selection|null {
   while (parent && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
     parent = parent.parentNode;
   }
-  return parent instanceof ShadowRoot ? parent.getSelection() : this.window().getSelection();
+  // ShadowRoot.getSelection may be undefined or broken in iframe/sandbox/Safari (e.g. Tauri). Try and fall back to window. /
+  // iframe·sandbox·Safari(예: Tauri)에서는 ShadowRoot.getSelection이 없거나 오동작할 수 있음. 시도 후 실패 시 window로 폴백
+  if (parent instanceof ShadowRoot && typeof parent.getSelection === 'function') {
+    try {
+      const selection = parent.getSelection();
+      if (selection != null) {
+        return selection;
+      }
+    } catch {
+      // Safari / iframe: ShadowRoot.getSelection can throw or behave incorrectly / Safari·iframe에서 throw 또는 오동작 가능
+    }
+  }
+  return this.window().getSelection();
 };
 
 Node.prototype.hasSelection = function(): boolean {

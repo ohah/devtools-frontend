@@ -1085,23 +1085,28 @@ export class SourcesPanel extends UI.Panel.Panel implements
       }, {jslogContext: 'copy-primitive'});
     }
     // We are trying to copy a remote object.
+    // Pre-fetch string when menu opens so click handler can copy synchronously (Safari requires user gesture).
+    // 메뉴가 열릴 때 문자열을 미리 가져와서, 클릭 시 동기적으로만 복사 (Safari는 사용자 제스처 직후만 허용)
     else if (remoteObject.type === 'object') {
-      const copyDecodedValueHandler = async(): Promise<void> => {
-        const result = await remoteObject.callFunctionJSON(toStringForClipboard, [{
-                                                             value: {
-                                                               subtype: remoteObject.subtype,
-                                                               indent,
-                                                             },
-                                                           }]);
-        inspectorFrontendHost.copyText(result);
+      let preparedCopyResult: string|null = null;
+      const copyArg = { value: { subtype: remoteObject.subtype, indent } };
+      void remoteObject.callFunctionJSON(toStringForClipboard, [copyArg]).then(result => {
+        preparedCopyResult = result ?? null;
+      });
+
+      const copyDecodedValueHandler = (): void => {
+        if (preparedCopyResult !== null) {
+          inspectorFrontendHost.copyText(preparedCopyResult);
+          return;
+        }
+        void remoteObject.callFunctionJSON(toStringForClipboard, [copyArg]).then(
+          inspectorFrontendHost.copyText.bind(inspectorFrontendHost));
       };
 
       ctxMenuClipboardSection.appendItem(
           i18nString(UIStrings.copyS, {PH1: String(copyContextMenuTitle)}), copyDecodedValueHandler,
           {jslogContext: 'copy-object'});
-    }
-
-    else if (remoteObject.type === 'function') {
+    } else if (remoteObject.type === 'function') {
       contextMenu.debugSection().appendItem(
           i18nString(UIStrings.showFunctionDefinition), this.showFunctionDefinition.bind(this, remoteObject),
           {jslogContext: 'show-function-definition'});

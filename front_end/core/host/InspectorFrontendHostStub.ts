@@ -154,7 +154,27 @@ export class InspectorFrontendHostStub implements InspectorFrontendHostAPI {
     if (text === undefined || text === null) {
       return;
     }
-    void navigator.clipboard.writeText(text);
+    // Run clipboard write inside a synthetic click so it runs "in" a click handler (helps when copyText is called after async). /
+    // 비동기 응답 뒤에 copyText가 호출될 때도 클릭 핸들러 안에서 실행되도록 synthetic click 사용
+    const doCopy = (): void => {
+      if (typeof navigator?.clipboard?.writeText === 'function') {
+        void navigator.clipboard.writeText(text);
+      }
+    };
+    /* eslint-disable @devtools/no-imperative-dom-api -- synthetic click trick for clipboard user gesture */
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.position = 'fixed';
+    button.style.left = '-9999px';
+    button.style.opacity = '0';
+    button.style.pointerEvents = 'none';
+    button.addEventListener('click', () => {
+      doCopy();
+      button.remove();
+    });
+    document.body.appendChild(button);
+    button.click();
+    /* eslint-enable @devtools/no-imperative-dom-api */
   }
 
   openInNewTab(url: Platform.DevToolsPath.UrlString): void {
