@@ -65,6 +65,7 @@ devtools_entrypoint("bundle") {
     "../../panels/network/*",
     "../../panels/profiler/*",
     "../../panels/protocol_monitor/*",
+    "../../panels/react_devtools/*",
     "../../panels/recorder/*",
     "../../panels/settings/*",
     "../../panels/sources/*",

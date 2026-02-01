@@ -33,6 +33,7 @@ devtools_entrypoint("bundle") {
     "../../entrypoints/main/*",
     "../../panels/application/*",
     "../../panels/console/*",
+    "../../panels/react_devtools/*",
     "../../panels/explain/*",
     "../../panels/issues/*",
     "../../panels/network/*",
