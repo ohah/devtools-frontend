@@ -9834,9 +9834,14 @@ export namespace Memory {
 export namespace MMKVStorage {
 
   /**
-   * MMKV Storage item (key-value pair).
+   * MMKV Storage item: [key, value, valueType]. valueType is string, number, boolean, or buffer.
    */
   export type Item = string[];
+
+  /**
+   * MMKV value type.
+   */
+  export type ValueType = 'string' | 'number' | 'boolean' | 'buffer';
 
   export interface GetMMKVItemsRequest {
     instanceId: string;
@@ -9850,6 +9855,7 @@ export namespace MMKVStorage {
     instanceId: string;
     key: string;
     value: string;
+    valueType?: ValueType;
   }
 
   export interface RemoveMMKVItemRequest {
@@ -9874,6 +9880,7 @@ export namespace MMKVStorage {
     instanceId: string;
     key: string;
     newValue: string;
+    valueType?: ValueType;
   }
 
   export interface MmkvItemUpdatedEvent {
@@ -9881,6 +9888,7 @@ export namespace MMKVStorage {
     key: string;
     oldValue: string;
     newValue: string;
+    valueType?: ValueType;
   }
 
   export interface MmkvInstanceCreatedEvent {

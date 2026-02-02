@@ -56,8 +56,8 @@ export class MMKVStorage extends Common.ObjectWrapper.ObjectWrapper<MMKVStorage.
     return this.model.agent.invoke_getMMKVItems({instanceId: this.instanceId}).then(({entries}: {entries: Protocol.MMKVStorage.Item[]|null}) => entries);
   }
 
-  setItem(key: string, value: string): void {
-    void this.model.agent.invoke_setMMKVItem({instanceId: this.instanceId, key, value});
+  setItem(key: string, value: string, valueType?: Protocol.MMKVStorage.ValueType): void {
+    void this.model.agent.invoke_setMMKVItem({instanceId: this.instanceId, key, value, valueType});
   }
 
   removeItem(key: string): void {
@@ -84,12 +84,14 @@ export namespace MMKVStorage {
   export interface MmkvItemAddedEvent {
     key: string;
     value: string;
+    valueType?: Protocol.MMKVStorage.ValueType;
   }
 
   export interface MmkvItemUpdatedEvent {
     key: string;
     oldValue: string;
     value: string;
+    valueType?: Protocol.MMKVStorage.ValueType;
   }
 
   export interface EventTypes {
@@ -142,24 +144,24 @@ export class MMKVStorageModel extends SDK.SDKModel.SDKModel<EventTypes> {
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEM_REMOVED, eventData);
   }
 
-  mmkvItemAdded({instanceId, key, newValue}: Protocol.MMKVStorage.MmkvItemAddedEvent): void {
+  mmkvItemAdded({instanceId, key, newValue, valueType}: Protocol.MMKVStorage.MmkvItemAddedEvent): void {
     let mmkvStorage = this.storageForInstanceId(instanceId);
     if (!mmkvStorage) {
       // Create storage if it doesn't exist / 존재하지 않으면 스토리지 생성
       mmkvStorage = this.addStorage(instanceId);
     }
 
-    const eventData = {key, value: newValue};
+    const eventData = {key, value: newValue, valueType};
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEM_ADDED, eventData);
   }
 
-  mmkvItemUpdated({instanceId, key, oldValue, newValue}: Protocol.MMKVStorage.MmkvItemUpdatedEvent): void {
+  mmkvItemUpdated({instanceId, key, oldValue, newValue, valueType}: Protocol.MMKVStorage.MmkvItemUpdatedEvent): void {
     const mmkvStorage = this.storageForInstanceId(instanceId);
     if (!mmkvStorage) {
       return;
     }
 
-    const eventData = {key, oldValue, value: newValue};
+    const eventData = {key, oldValue, value: newValue, valueType};
     mmkvStorage.dispatchEventToListeners(MMKVStorage.Events.MMKV_ITEM_UPDATED, eventData);
   }
 
@@ -215,12 +217,12 @@ export class MMKVStorageDispatcher implements ProtocolProxyApi.MMKVStorageDispat
     this.model.mmkvItemRemoved({instanceId, key});
   }
 
-  mmkvItemAdded({instanceId, key, newValue}: Protocol.MMKVStorage.MmkvItemAddedEvent): void {
-    this.model.mmkvItemAdded({instanceId, key, newValue});
+  mmkvItemAdded({instanceId, key, newValue, valueType}: Protocol.MMKVStorage.MmkvItemAddedEvent): void {
+    this.model.mmkvItemAdded({instanceId, key, newValue, valueType});
   }
 
-  mmkvItemUpdated({instanceId, key, oldValue, newValue}: Protocol.MMKVStorage.MmkvItemUpdatedEvent): void {
-    this.model.mmkvItemUpdated({instanceId, key, oldValue, newValue});
+  mmkvItemUpdated({instanceId, key, oldValue, newValue, valueType}: Protocol.MMKVStorage.MmkvItemUpdatedEvent): void {
+    this.model.mmkvItemUpdated({instanceId, key, oldValue, newValue, valueType});
   }
 
   mmkvInstanceCreated({instanceId}: Protocol.MMKVStorage.MmkvInstanceCreatedEvent): void {

@@ -7,8 +7,16 @@
 # Query and modify MMKV storage.
 experimental domain MMKVStorage
 
-  # MMKV Storage item (key-value pair).
+  # MMKV Storage item: [key, value, valueType]. valueType is string, number, boolean, or buffer.
   type Item extends array of string
+
+  # MMKV value type.
+  type ValueType extends string
+    enum
+      string
+      number
+      boolean
+      buffer
 
   # Enables storage tracking, storage events will now be delivered to the client.
   command enable
@@ -24,6 +32,8 @@ experimental domain MMKVStorage
       string instanceId
       string key
       string value
+      # One of string, number, boolean, buffer.
+      optional ValueType valueType
 
   command removeMMKVItem
     parameters
@@ -48,6 +58,7 @@ experimental domain MMKVStorage
       string instanceId
       string key
       string newValue
+      optional ValueType valueType
 
   event mmkvItemUpdated
     parameters
@@ -55,6 +66,7 @@ experimental domain MMKVStorage
       string key
       string oldValue
       string newValue
+      optional ValueType valueType
 
   event mmkvInstanceCreated
     parameters

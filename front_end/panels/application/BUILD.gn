@@ -164,6 +164,7 @@ devtools_ui_module("unittests") {
     "InterestGroupStorageView.test.ts",
     "InterestGroupTreeElement.test.ts",
     "KeyValueStorageItemsView.test.ts",
+    "MMKVStorageItemsView.test.ts",
     "OriginTrialTreeView.test.ts",
     "PreloadingTreeElement.test.ts",
     "ReportingApiView.test.ts",
