@@ -54,8 +54,6 @@ devtools_ui_module("application") {
     "InterestGroupStorageView.ts",
     "InterestGroupTreeElement.ts",
     "KeyValueStorageItemsView.ts",
-    "MMKVStorageItemsView.ts",
-    "MMKVStorageModel.ts",
     "OpenedWindowDetailsView.ts",
     "OriginTrialTreeView.ts",
     "PreloadingTreeElement.ts",
@@ -127,6 +125,7 @@ devtools_entrypoint("bundle") {
   visibility = [
     ":*",
     "../../entrypoints/*",
+    "../../panels/mmkv:*",
     "../../panels/storage:*",
   ]
 
@@ -164,7 +163,6 @@ devtools_ui_module("unittests") {
     "InterestGroupStorageView.test.ts",
     "InterestGroupTreeElement.test.ts",
     "KeyValueStorageItemsView.test.ts",
-    "MMKVStorageItemsView.test.ts",
     "OriginTrialTreeView.test.ts",
     "PreloadingTreeElement.test.ts",
     "ReportingApiView.test.ts",

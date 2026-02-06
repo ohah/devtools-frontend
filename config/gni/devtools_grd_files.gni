@@ -741,6 +741,8 @@ grd_files_bundled_sources = [
   "front_end/panels/redux/extension/devpanel.html",
   "front_end/panels/storage/storage-meta.js",
   "front_end/panels/storage/storage.js",
+  "front_end/panels/mmkv/mmkv-meta.js",
+  "front_end/panels/mmkv/mmkv.js",
   "front_end/panels/redux/extension/devpanel.bundle.js",
   "front_end/panels/redux/extension/devpanel.bundle.css",
   "front_end/panels/redux/extension/background.bundle.js",

@@ -178,7 +178,7 @@ export class StorageItemsToolbar extends
   }
 
   setCanDeleteSelected(enabled: boolean): void {
-    this.#deleteSelectedButtonDisabled = enabled;
+    this.#deleteSelectedButtonDisabled = !enabled;
     this.requestUpdate();
   }
 
