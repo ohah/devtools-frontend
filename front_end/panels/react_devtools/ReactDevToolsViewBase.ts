@@ -175,6 +175,27 @@ export class ReactDevToolsViewBase extends UI.View.SimpleView implements
       canViewElementSourceFunction: () => true,
       viewElementSourceFunction,
     });
+
+    // Ensure dark theme input/placeholder are visible (not black). When DevTools runs
+    // inside our Inspector iframe, theme vars may not apply; placeholder and "new entry"
+    // can render black. Force text and placeholder colors for dark theme.
+    if (usingDarkTheme) {
+      const applyDarkThemeInputOverrides = (): void => {
+        const root = document.documentElement.style;
+        root.setProperty('--color-text', '#ffffff');
+        root.setProperty('--color-attribute-editable-value', '#cedae0');
+        root.setProperty('--color-dimmer', '#8f949d');
+        root.setProperty('--color-dim', '#8f949d');
+        let styleEl = document.getElementById('react-devtools-dark-input-overrides') as HTMLStyleElement | null;
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'react-devtools-dark-input-overrides';
+          styleEl.textContent = 'input::placeholder { color: var(--color-dimmer); }';
+          document.head.appendChild(styleEl);
+        }
+      };
+      requestAnimationFrame(applyDarkThemeInputOverrides);
+    }
   }
 
   #renderLoader(): void {
