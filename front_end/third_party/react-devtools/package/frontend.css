@@ -489,14 +489,13 @@
   align-items: center;
 }
 
-/* Search input: use elevation so it’s visible in dark theme (not same as panel background) / 검색 인풋: 다크 테마에서 패널 배경과 구분되도록 elevation 사용 */
 .DIPlRR9ISDncbPNuOIrF {
   flex: 1 1 100px;
   width: 100px;
   font-size: var(--font-size-sans-large);
   outline: none;
   border: none;
-  background-color: var(--color-background-elevation-1, var(--color-background));
+  background-color: var(--color-background);
   color: var(--color-text);
   padding-left: 1.5rem;
   margin-left: -1rem;
